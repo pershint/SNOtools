@@ -76,7 +76,7 @@ int main(int argc, char** argv)
       //First, we look in our background rich regions 
       if((energy < ECut) | (radius > RCut))
         continue;
-      if(!(dcFlagged) & pathologicalMask) //skip entry if dcFlagged has any PMask
+      if(~(dcFlagged) & pathologicalMask) //skip entry if dcFlagged has any PMask
         continue;
       if(trigWord & pathTrigMask) //skip entry if trigger has an Esum trigger
         continue;
@@ -87,7 +87,7 @@ int main(int argc, char** argv)
         Class_clean = 0;
 
       //Next, see if the event is clean accoding to the defined DC branch 
-      if(!(dcFlagged) & dcCutMask) //is dirty if dcFlagged has any dcCutMask bits
+      if(~(dcFlagged) & dcCutMask) //is dirty if dcFlagged has any dcCutMask bits
         DC_clean = 0;
       if((trigWord) & dcTrigMask) //is dirty if it has the OwlEHi bit
         DC_clean = 0;
