@@ -22,17 +22,19 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+  //I don't even use these; it crashed on my cluster without them
   // Define our histograms
-
+  //Define histograms to fill in
   TApplication* myapp = new TApplication("myapp",0,0);
 
   TCanvas* c1 = new TCanvas("c1","c1",800,1200);
-  c1->Divide(2,1);
-  //Define histograms to fill in
   TH1D* h_FlaggedEvents = new TH1D("h_FlaggedEvents", "h_FlaggedEvents", 200,0.,200.);
   TH1D* h_AllEvents = new TH1D("h_AllEvents", "h_AllEvents", 200,0.,200.);
   TH1D* h_FracFlagged = new TH1D("h_FracFlagged", "h_FracFlagged", 200,0.,200.);
- //some cut selections you could apply
+  h_AllEvents->Sumw2();
+  h_FracFlagged->Sumw2();
+  h_FlaggedEvents->Sumw2();
+  //some cut selections you could apply
   //To build this mask, see snopl.us/docs/rat/user_manual/html/node226.html
   //int prescaleonly
   int cut_mask = 0b100000;
@@ -40,7 +42,7 @@ int main(int argc, char** argv)
   for (int f=1; f<argc; f++)
   {
     const string& filename = string(argv[f]);
-    TFile* mafile = TFile::Open(filename.c_str(),"UPDATE");
+    TFile* mafile = TFile::Open(filename.c_str(),"READ");
     //Get the tree that has the entries
     TTree* T = (TTree*) mafile->Get("output");
     ULong64_t dcFlagged;   //will be filled per event; tells you what was flagged in that event
@@ -58,13 +60,18 @@ int main(int argc, char** argv)
       T->GetEntry(entry);
       if(nhits > 200)
         continue;
-      h_AllEvents->Fill(nhits,1.);
+      h_AllEvents->Fill(nhits);
+      if (!(dcApplied))
+        continue;
       if (~(dcFlagged) & cut_mask)   //true if a cut_mask bit is in dcFlagged
-        h_FlaggedEvents->Fill(nhits,1.);
+        h_FlaggedEvents->Fill(nhits);
     }
+  delete T;
+  mafile->Close();
+  delete mafile;
   }
 
-  h_FracFlagged->Divide(h_FlaggedEvents,h_AllEvents);
+  h_FracFlagged->Divide(h_FlaggedEvents,h_AllEvents,1.,1.,"b");
 
   h_FlaggedEvents->GetXaxis()->SetTitle("nhit");
   h_FlaggedEvents->GetYaxis()->SetTitle("Events");
@@ -72,13 +79,10 @@ int main(int argc, char** argv)
   h_FracFlagged->GetXaxis()->SetTitle("nhit");
   h_FracFlagged->GetYaxis()->SetTitle("Events");
 
-  c1->cd(1);
-    h_FlaggedEvents->Draw();
-  c1->cd(2);
-    h_FracFlagged->Draw();
-  myapp->Run();
-
-  delete h_FlaggedEvents;
-  delete h_AllEvents;
-  delete h_FracFlagged;
+  TFile* thehists = new TFile("output.root", "CREATE");
+  thehists->Add(h_FlaggedEvents);
+  thehists->Add(h_AllEvents);
+  thehists->Add(h_FracFlagged);
+  thehists->Write();
+  thehists->Close();
 } //End main

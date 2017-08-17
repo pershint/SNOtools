@@ -4,8 +4,9 @@
 #    are in ./processing_roots/
 #  - Change the name you pipe to to whatever runs you are reading
 
-FILEDIR=/home/pershint/snoing/install/rat-dev/tools/BifurAnalysis/procroots/ntuples/
+FILEDIR=/home/maskins/golden_reproc/ntuple/
+#FILEDIR=/home/pershint/snoing/install/rat-dev/tools/SNOtools/BifurAnalysis/procntuples/
 FILELIST=$(find $FILEDIR -name \*.ntuple.root | sort)
 
 #Pass the list of files as arguments to be read from for the analysis
-./BifurcatedAnalysis $FILELIST >> tester.out
+./CutVSNHit $FILELIST >> tester.out

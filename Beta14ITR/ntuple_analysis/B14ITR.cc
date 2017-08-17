@@ -47,7 +47,7 @@ int main(int argc, char** argv)
   for (int f=1; f<argc; f++)
   {
     const string& filename = string(argv[f]);
-    TFile* mafile = TFile::Open(filename.c_str(),"UPDATE");
+    TFile* mafile = TFile::Open(filename.c_str(),"READ");
     //Get the tree that has the entries
     TTree* T = (TTree*) mafile->Get("output");
     Double_t beta14;
