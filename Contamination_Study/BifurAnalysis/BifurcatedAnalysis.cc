@@ -36,7 +36,7 @@ int main(int argc, char** argv)
   //Masks for preliminary cut and Data Cleaning Cuts in analysis
   int pathologicalMask = 0b100000011100000;
   int dcCutMask = 0b1111100011100;
-  int pathTrigMask = 0b110001100000;  //ESum , PED, and PulseGT bits in trigmask
+  int pathTrigMask = 0b1010001100000;  //ESum , PED, and PulseGT bits in trigmask
   int dcTrigMask = 0b1000000000;
 
   //Integers used in bifurcated analysis equation
