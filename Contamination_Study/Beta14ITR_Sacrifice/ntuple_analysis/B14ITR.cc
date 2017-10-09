@@ -22,94 +22,164 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-  // Define our histograms
+  //Get filenames from command line
+  std::string outname = "none.txt";
+  std::string infile = "none.txt";
+  bool haveinput = false;
+  bool haveoutput = false;
+  for(int i=1; i<argc; i++)
+  {
+    if( argv[i] == string("-i") )
+    {
+      haveinput = true;
+      cerr << "found it" << endl;
+      continue;
+    }
+    if( haveinput == true )
+    {
+      infile = argv[i];
+      haveinput = false;
+      continue;
+    }
+    if( argv[i] == string("-o") )
+    {
+      haveoutput = true;
+      continue;
+    }
+    if( haveoutput == true )
+    {
+      outname = argv[i];
+      haveoutput = false;
+      continue;
+    }
+  }
 
+  // Define our histograms
   TApplication* myapp = new TApplication("myapp",0,0);
 
   TCanvas* c1 = new TCanvas("c1","c1",800,1200);
   c1->Divide(2,1);
   //Define histograms to fill in
-  TH2F* h_B14ITR_dirty = new TH2F("h_B14ITR_dirty", "h_B14ITR_dirty", 50,0.,1.,50,-0.5,2.);
-  TH2F* h_B14ITR_clean = new TH2F("h_B14ITR_clean", "h_B14ITR_clean", 50,0.,1.,50,-0.5,2.);
-  TH1D* h_B14 = new TH1D("h_B14", "h_B14", 30, -0.5, 2.);
+  TH2F* h_B14ITR_fail = new TH2F("h_B14ITR_fail", "h_B14ITR_fail", 50,0.,1.,50,-0.5,2.);
+  TH2F* h_B14ITR_pass = new TH2F("h_B14ITR_pass", "h_B14ITR_pass", 50,0.,1.,50,-0.5,2.);
+  TH1F* h_fit_fail_E = new TH1F("h_fit_fail_E", "h_fit_fail_E",  28,5.5,11.5);
+  TH1F* h_fit_E = new TH1F("h_fit_E", "h_fit_E",  28,5.5,11.5);
+  TH1F* h_FracFlagged = new TH1F("h_FracFlagged", "h_FracFlagged",  28,5.5,11.5);
+  TH2F* h_B14ITR = new TH2F("h_B14ITR", "h_B14ITR", 50,0.,1.,50,-0.5,2.);
 
   //some cut selections you could apply
   //To build this mask, see snopl.us/docs/rat/user_manual/html/node226.html
   //int prescaleonly
   bool plotClean = true;
   bool plotDirty = true;
-  int muonsonly = 0b10000000;
-  int analysis_mask = 0b1111111111110;
-  cout << analysis_mask << endl;
-  //Way you could define cuts to put right in your Draw Statement
-  TCut beta14_c1 = "beta14>0";
 
-  for (int f=1; f<argc; f++)
+  //Define cuts here
+  int path_DCmask = 0b1110000011100010;  //Pathological cuts for contamination study 
+  int path_trigmask = 0b1010001100000;  //ESum, PGD, and PED triggers
+  double E_low = 5.5;   //MeV
+  double E_high = 9.0;  //MeV
+  double r_cut = 5500;  //mm
+  double b14_low = -0.12;
+  double b14_high = 0.95;
+  double itr_low = 0.55;
+
+
+  TFile* mafile = TFile::Open(infile.c_str(),"READ");
+  //Get the tree that has the entries
+  TTree* T = (TTree*) mafile->Get("output");
+  Double_t beta14;
+  Double_t ITR;
+  Double_t energy;
+  Double_t posr;
+  Bool_t fitValid;
+  Int_t isN16;
+  ULong64_t dcFlagged;   //will be filled per event; tells you what was flagged in that event
+  ULong64_t dcApplied;   //should be the same for all events; tells you what was
+                         //looked for when Data Cleaning was run
+  Int_t triggerWord;
+
+  T->SetBranchAddress("beta14",&beta14);
+  T->SetBranchAddress("itr",&ITR);
+  T->SetBranchAddress("dcApplied",&dcApplied);
+  T->SetBranchAddress("energy",&energy);
+  T->SetBranchAddress("posr",&posr);
+  T->SetBranchAddress("isN16",&isN16);
+  T->SetBranchAddress("fitValid",&fitValid);
+  T->SetBranchAddress("dcFlagged",&dcFlagged);
+  T->SetBranchAddress("triggerWord",&triggerWord);
+
+  for (int entry=0; entry < T->GetEntries(); entry++)
   {
-    const string& filename = string(argv[f]);
-    TFile* mafile = TFile::Open(filename.c_str(),"READ");
-    //Get the tree that has the entries
-    TTree* T = (TTree*) mafile->Get("output");
-    Double_t beta14;
-    Double_t ITR;
-    Double_t energy;
-    Double_t radius;
-    ULong64_t dcFlagged;   //will be filled per event; tells you what was flagged in that event
-    ULong64_t dcApplied;   //should be the same for all events; tells you what was
-                           //looked for when Data Cleaning was run
-    Int_t nhits;
+    T->GetEntry(entry);
+    //First, we skip events defined as pathological
+    if((energy > E_high) || (energy < E_low) || (posr > r_cut))
+      continue;
+    if(!fitValid)
+      continue;
+    if(!isN16)
+      continue;
+    //if (!(dcApplied))   //Uncommment to Check you data cleaned the file
+    //  continue;
 
-    T->SetBranchAddress("beta14",&beta14);
-    T->SetBranchAddress("itr",&ITR);
-    T->SetBranchAddress("dcApplied",&dcApplied);
-    T->SetBranchAddress("energy",&energy);
-    T->SetBranchAddress("posr",&radius);
-    T->SetBranchAddress("dcFlagged",&dcFlagged);
-    T->SetBranchAddress("nhits",&nhits);
+    if (~(dcFlagged) & path_DCmask)   //true if a pathological bit is in dcFlagged
+      continue;
+    if (triggerWord & path_trigmask)  //true if a pathological bit is in triggerWord
+      continue;
 
-    for (int entry=0; entry < T->GetEntries(); entry++)
-    {
-      T->GetEntry(entry);
-      if(nhits < 40)
-        continue;
-      if(0.0 < beta14)   //Don't plot negative betas
-        h_B14->Fill(beta14);
-      if((-0.5 < beta14) & (0.0 < ITR))   //Manually applying cuts
-      {
-        if(((analysis_mask & dcFlagged) == analysis_mask))
-          h_B14ITR_clean->Fill(ITR,beta14);
-        else
-          h_B14ITR_dirty->Fill(ITR,beta14);
-      }
-        //code to fill in beta14 histogram
-      // end beta14 histogram
-      
-
+    //passed pathological cuts. Check classifiers now.
+    h_B14ITR->Fill(ITR,beta14);
+    h_fit_E->Fill(energy);
+    if ((beta14 > b14_high) | (beta14<b14_low) | (ITR < itr_low)){
+        h_B14ITR_fail->Fill(ITR,beta14);
+        h_fit_fail_E->Fill(energy);
+    } else{
+        h_B14ITR_pass->Fill(ITR,beta14);
     }
-  }
+  } //loop entries end
 
-//  h_B14->Draw();
-  h_B14ITR_dirty->SetMarkerStyle(20);
-  h_B14ITR_dirty->SetMarkerColor(2);
-  h_B14ITR_dirty->SetMarkerSize(0.7);
-  h_B14ITR_dirty->GetXaxis()->SetTitle("ITR");
-  h_B14ITR_dirty->GetYaxis()->SetTitle("Beta14");
+  //Now just a bunch of axis definitions; this could be organized better...
+  h_FracFlagged->Divide(h_fit_fail_E,h_fit_E,1.,1.,"b");
 
-  h_B14ITR_clean->SetMarkerStyle(20);
-  h_B14ITR_clean->SetMarkerColor(4);
-  h_B14ITR_clean->SetMarkerSize(0.7);
-  h_B14ITR_clean->GetXaxis()->SetTitle("ITR");
-  h_B14ITR_clean->GetYaxis()->SetTitle("Beta14");
+  h_fit_fail_E->GetXaxis()->SetTitle("Energy(Mev)");
+  h_fit_fail_E->GetYaxis()->SetTitle("Events");
 
-  c1->cd(1);
-  if(plotDirty)
-    h_B14ITR_dirty->Draw();
-  c1->cd(2);
-  if(plotClean)
-    h_B14ITR_clean->Draw("same");
-  myapp->Run();
+  h_fit_E->GetXaxis()->SetTitle("Energy(Mev)");
+  h_fit_E->GetYaxis()->SetTitle("Events");
 
-  delete h_B14;
-  delete h_B14ITR_clean;
-  delete h_B14ITR_dirty;
+  h_fit_E->GetXaxis()->SetTitle("Energy(Mev)");
+  h_fit_E->GetYaxis()->SetTitle("Events");
+
+  h_B14ITR->SetMarkerStyle(20);
+  h_B14ITR->SetMarkerColor(7);
+  h_B14ITR->SetMarkerSize(0.7);
+  h_B14ITR->GetXaxis()->SetTitle("ITR");
+  h_B14ITR->GetYaxis()->SetTitle("Beta14");
+
+  h_B14ITR_fail->SetMarkerStyle(20);
+  h_B14ITR_fail->SetMarkerColor(2);
+  h_B14ITR_fail->SetMarkerSize(0.7);
+  h_B14ITR_fail->GetXaxis()->SetTitle("ITR");
+  h_B14ITR_fail->GetYaxis()->SetTitle("Beta14");
+
+  h_B14ITR_pass->SetMarkerStyle(20);
+  h_B14ITR_pass->SetMarkerColor(4);
+  h_B14ITR_pass->SetMarkerSize(0.7);
+  h_B14ITR_pass->GetXaxis()->SetTitle("ITR");
+  h_B14ITR_pass->GetYaxis()->SetTitle("Beta14");
+
+  //Put the histograms into a final output file
+  TFile* thehists = new TFile(outname.c_str(), "CREATE");
+  thehists->Add(h_B14ITR);
+  thehists->Add(h_B14ITR_pass);
+  thehists->Add(h_B14ITR_fail);
+  thehists->Add(h_fit_E);
+  thehists->Add(h_fit_fail_E);
+  thehists->Add(h_FracFlagged);
+
+  delete h_B14ITR;
+  delete h_B14ITR_pass;
+  delete h_B14ITR_fail;
+  delete h_fit_E;
+  delete h_fit_fail_E;
+  delete h_FracFlagged;
 } //End main
