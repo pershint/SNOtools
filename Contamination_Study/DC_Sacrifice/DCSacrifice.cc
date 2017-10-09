@@ -107,7 +107,7 @@ int main(int argc, char** argv)
   {
     T->GetEntry(entry);
     //First, we skip events defined as pathological
-    if((energy < 5.5) || (posr > 5500))
+    if((energy > 9) || (energy < 5.5) || (posr > 5500))
       continue;
     if(!fitValid)
       continue;

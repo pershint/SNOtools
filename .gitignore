@@ -1,3 +1,4 @@
-/Contamination_Study/Beta14ITR/procroot_analysis/*.root
+/Contamination_Study/Beta14ITR_sacrifice/procroot_analysis/*.root
+/Contamination_Study/BifurAnalysis/procntuples/*.root
 */procroots/*
 */procntuples/*
