@@ -34,12 +34,13 @@ int main(int argc, char** argv)
   h_AllEvents->Sumw2();
   h_FracFlagged->Sumw2();
   h_FlaggedEvents->Sumw2();
+  const char* outfile = argv[1];
   //some cut selections you could apply
   //To build this mask, see snopl.us/docs/rat/user_manual/html/node226.html
   //int prescaleonly
-  int cut_mask = 0b100000;
+  int cut_mask = 0b1000000000000;
 
-  for (int f=1; f<argc; f++)
+  for (int f=2; f<argc; f++)
   {
     const string& filename = string(argv[f]);
     TFile* mafile = TFile::Open(filename.c_str(),"READ");
@@ -47,12 +48,17 @@ int main(int argc, char** argv)
     TTree* T = (TTree*) mafile->Get("output");
     ULong64_t dcFlagged;   //will be filled per event; tells you what was flagged in that event
     ULong64_t dcApplied;   //should be the same for all events; tells you what was
-    //Bool_t fitValid;     //Uncomment if you want only the valid fits
+    Bool_t fitValid;     //Uncomment if you want only the valid fits
+    Bool_t FECDHit;
     Int_t nhits;
+    Int_t GTID;
 
     T->SetBranchAddress("dcApplied",&dcApplied);
     T->SetBranchAddress("dcFlagged",&dcFlagged);
     T->SetBranchAddress("nhits",&nhits);
+    T->SetBranchAddress("fitValid",&fitValid);
+    T->SetBranchAddress("FECDHit",&FECDHit);
+    T->SetBranchAddress("eventID",&GTID);
     //T->SetBranchAddress("fitValid",&fitValid);
 
     for (int entry=0; entry < T->GetEntries(); entry++)
@@ -60,11 +66,14 @@ int main(int argc, char** argv)
       T->GetEntry(entry);
       if(nhits > 200)
         continue;
+      if(!(fitValid && FECDHit))
+        continue;
       h_AllEvents->Fill(nhits);
       if (!(dcApplied))
         continue;
-      if (~(dcFlagged) & cut_mask)   //true if a cut_mask bit is in dcFlagged
+      if (~(dcFlagged) & cut_mask){   //true if a cut_mask bit is in dcFlagged
         h_FlaggedEvents->Fill(nhits);
+      }
     }
   delete T;
   mafile->Close();
@@ -79,7 +88,7 @@ int main(int argc, char** argv)
   h_FracFlagged->GetXaxis()->SetTitle("nhit");
   h_FracFlagged->GetYaxis()->SetTitle("Events");
 
-  TFile* thehists = new TFile("output.root", "CREATE");
+  TFile* thehists = new TFile(outfile, "CREATE");
   thehists->Add(h_FlaggedEvents);
   thehists->Add(h_AllEvents);
   thehists->Add(h_FracFlagged);
