@@ -62,11 +62,14 @@ int main(int argc, char** argv)
   //Define histograms to fill in
   TH2F* h_B14ITR_fail = new TH2F("h_B14ITR_fail", "h_B14ITR_fail", 50,0.,1.,50,-0.5,2.);
   TH2F* h_B14ITR_pass = new TH2F("h_B14ITR_pass", "h_B14ITR_pass", 50,0.,1.,50,-0.5,2.);
-  TH1F* h_fit_fail_E = new TH1F("h_fit_fail_E", "h_fit_fail_E",  28,5.5,11.5);
-  TH1F* h_fit_E = new TH1F("h_fit_E", "h_fit_E",  28,5.5,11.5);
-  TH1F* h_FracFlagged = new TH1F("h_FracFlagged", "h_FracFlagged",  28,5.5,11.5);
+  TH1D* h_fit_fail_E = new TH1D("h_fit_fail_E", "h_fit_fail_E",  28,5.5,11.5);
+  TH1D* h_fit_E = new TH1D("h_fit_E", "h_fit_E",  28,5.5,11.5);
+  TH1D* h_FracFlagged = new TH1D("h_FracFlagged", "h_FracFlagged",  28,5.5,11.5);
   TH2F* h_B14ITR = new TH2F("h_B14ITR", "h_B14ITR", 50,0.,1.,50,-0.5,2.);
 
+  h_fit_E->Sumw2();
+  h_FracFlagged->Sumw2();
+  h_fit_fail_E->Sumw2();
   //some cut selections you could apply
   //To build this mask, see snopl.us/docs/rat/user_manual/html/node226.html
   //int prescaleonly
@@ -137,6 +140,9 @@ int main(int argc, char** argv)
     }
   } //loop entries end
 
+  delete T;
+  mafile->Close();
+  delete mafile;
   //Now just a bunch of axis definitions; this could be organized better...
   h_FracFlagged->Divide(h_fit_fail_E,h_fit_E,1.,1.,"b");
 
@@ -175,11 +181,6 @@ int main(int argc, char** argv)
   thehists->Add(h_fit_E);
   thehists->Add(h_fit_fail_E);
   thehists->Add(h_FracFlagged);
-
-  delete h_B14ITR;
-  delete h_B14ITR_pass;
-  delete h_B14ITR_fail;
-  delete h_fit_E;
-  delete h_fit_fail_E;
-  delete h_FracFlagged;
+  thehists->Write();
+  thehists->Close();
 } //End main
