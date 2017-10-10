@@ -26,18 +26,21 @@ int main(int argc, char** argv)
   //Define histograms to fill in
   TH2F* h_B14ITR_dirty = new TH2F("h_B14ITR_dirty", "h_B14ITR_dirty", 50,0.,1.,50,-0.5,2.);
 
-  //Constants that we need for our analysis
-  double ECut = 5.5;    //in MeV
-  double RCut = 5500;   //in mm
+
+  //Define cuts here
+  int path_DCmask = 0b1110000011100010;  //Pathological cuts for contamination study
+  int cut_DCmask = 0b1111100011100;  //DC branch of contamination study
+  
+  int path_trigmask = 0b1010001100000;  //ESum, PGD, and PED triggers
+  int DC_trigmask = 0b1000000000; //OwlEHi trigger bit
+
+  double E_low = 5.5;   //MeV
+  double E_high = 9.0;  //MeV
+  double r_cut = 5500;  //mm
   double b14_low = -0.12;
   double b14_high = 0.95;
   double itr_low = 0.55;
 
-  //Masks for preliminary cut and Data Cleaning Cuts in analysis
-  int pathologicalMask = 0b100000011100000;
-  int dcCutMask = 0b1111100011100;
-  int pathTrigMask = 0b1010001100000;  //ESum , PED, and PulseGT bits in trigmask
-  int dcTrigMask = 0b1000000000;
 
   //Integers used in bifurcated analysis equation
   int a = 0;
@@ -58,13 +61,14 @@ int main(int argc, char** argv)
     ULong64_t dcFlagged;   //will be filled per event; tells you what was flagged in that event
     ULong64_t dcApplied;   //should be the same for all events; tells you what was
     Int_t trigWord;
-    cout << "SETTIG BRANCH NAMES" << endl;
+    Bool_t fitValid;
     //Set the branches that will fill the doubles we define per entry
     T->SetBranchAddress("beta14",&beta14);
     T->SetBranchAddress("itr",&ITR);
     T->SetBranchAddress("dcApplied",&dcApplied);
     T->SetBranchAddress("dcFlagged",&dcFlagged);
     T->SetBranchAddress("triggerWord",&trigWord);
+    T->SetBranchAddress("fitValid",&fitValid);
     T->SetBranchAddress("energy",&energy);
     T->SetBranchAddress("posr",&radius);
 
@@ -74,11 +78,13 @@ int main(int argc, char** argv)
       bool DC_clean = 1;
       bool Class_clean = 1;
       //First, we look in our background rich regions 
-      if((energy < ECut) | (radius > RCut))
+      if(!fitValid)
         continue;
-      if(~(dcFlagged) & pathologicalMask) //skip entry if dcFlagged has any PMask
+      if((energy < E_low) | (energy > E_high) | (radius > r_cut))
         continue;
-      if(trigWord & pathTrigMask) //skip entry if trigger has an Esum trigger
+      if(~(dcFlagged) & path_DCmask) //skip entry if dcFlagged has any PMask
+        continue;
+      if(trigWord & path_trigmask) //skip entry if trigger has an Esum trigger
         continue;
       //Now, first see if the event passes the classifiers
       if((beta14 < b14_low) | (b14_high < beta14))
@@ -87,9 +93,9 @@ int main(int argc, char** argv)
         Class_clean = 0;
 
       //Next, see if the event is clean accoding to the defined DC branch 
-      if(~(dcFlagged) & dcCutMask) //is dirty if dcFlagged has any dcCutMask bits
+      if(~(dcFlagged) & cut_DCmask) //is dirty if dcFlagged has any cut_DCmask bits
         DC_clean = 0;
-      if((trigWord) & dcTrigMask) //is dirty if it has the OwlEHi bit
+      if((trigWord) & DC_trigmask) //is dirty if it has the OwlEHi bit
         DC_clean = 0;
 
       //Finally, increment the a,b,c,d values according to classification

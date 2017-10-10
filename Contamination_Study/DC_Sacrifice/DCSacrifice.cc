@@ -87,8 +87,6 @@ int main(int argc, char** argv)
   ULong64_t dcApplied;   //should be the same for all events; tells you what was
   Bool_t fitValid;     //Uncomment if you want only the valid fits
   Int_t isN16;
-  Int_t nhits;
-  Int_t GTID;
   Int_t triggerWord;
   Double_t posr;
   Double_t energy;
@@ -100,7 +98,6 @@ int main(int argc, char** argv)
   T->SetBranchAddress("energy",&energy);
   T->SetBranchAddress("fitValid",&fitValid);
   T->SetBranchAddress("isN16",&isN16);
-  T->SetBranchAddress("eventID",&GTID);
 
   //loop through entries to find clean/dirty events
   for (int entry=0; entry < T->GetEntries(); entry++)

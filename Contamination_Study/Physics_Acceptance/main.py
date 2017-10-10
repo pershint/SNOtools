@@ -27,8 +27,8 @@ DCDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_DCsacs"))
 FITDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_Fitsacs"))
 
 ######### VARIABLES ########
-branch = "Fit"
-SACDIR = FITDIR
+branch = "DC"
+SACDIR = DCDIR
 db_entry = "N16_Positions_1.json"
 pcolor = 'b'
 ######## /VARIABLES #######
@@ -80,12 +80,12 @@ def plot_sacrificevsZ(calib_run_dict, sacrifice_filenames, branch):
 #Nabbed shamelessly from stack overvlow
 def weighted_avg_and_std(values, weights):
      """
-     Return the weighted average and standard deviation.
-     values, weights -- Numpy ndarrays with the same shape.
+     Returns the weighted average and standard deviation given values and
+     Their weights.  The weights are assumed to be ((1/unc(value)**2))
      """
      average = np.average(values, weights=weights)
-     variance = np.average((values-average)**2, weights=weights)  # Fast and numerically precise
-     return (average, np.sqrt(variance))
+     variance = 1./np.sqrt(np.sum(weights)) #np.average((values-average)**2, weights=weights)  # Fast and numerically precise
+     return (average, variance)
 
 if __name__ == '__main__':
     #Choose what branch of cuts you want to look at (DC or Fit)
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     print("STDEV OF FRAC. SACRIFICE: " + str(Frac_stdev))
 
     #Try a weighted average.  Weigh each fs term based on the uncertainties
-    weights = 1. / fs_unc
+    weights = 1. / (fs_unc**2)
     weight_av, weight_std = weighted_avg_and_std(fs, weights)
     print("WEIGHTED AVG. FRAC. SACRIFICE: " + str(weight_av))
     print("WEIGHTED STD. OF AVG: " + str(weight_std))
