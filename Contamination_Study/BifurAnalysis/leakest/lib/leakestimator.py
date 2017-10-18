@@ -1,24 +1,18 @@
-#This program takes the variables output from the bifurcation analysis and
-#Finds the best estimate on the leakage rates for both the data cleaning cuts
-#and the fit classifiers.
+#Class takes in results from a bifurcation analysis and calculates the
+#Estimated contamination.
 
 import numpy as np
 import matplotlib.pyplot as plt
 import pylab as pl
-import lib.playDarts as pd
-
-#RESULTS ARE FROM RUNNING BIFURCATION ANALYSIS ON 11 DAYS OPEN GOLD DATA
-#FIXME: Could make a sub-directory holding all of these results w/ descriptions
-
-bifurcation_boxes = {"a": 9., "b": 1., "c": 1., "d": 83.}
-bifurcation_boxes_SNO = {"a":369., "b":447., "c":15., "d":94264.}
-acceptance_rates = {"DC": 0.9273, "DC_unc": 0.0007, "Fit":0.9984, \
-        "Fit_unc": 0.0005}
-acceptance_rates_SNO = {"DC": 0.9998, "DC_unc": 0.00005, "Fit": 0.995, "Fit_unc":0.0005}
+import playDarts as pd
 
 class BifurAnalysisRun(object):
+    '''
+    bifur_boxes is a dictionary of the form output from the lib.resultgetter
+    functions.  One of the acceptance dicts should be fed in from above.
+    '''
     def __init__(self, bifur_boxes, acceptances):
-                    #SNO #SNO+Wat
+        #SNO #SNO+Wat
         self.a = bifur_boxes["a"] #369. #9.
         self.b = bifur_boxes["b"] #447. #1.
         self.c = bifur_boxes["c"] #15.  #1.
@@ -116,6 +110,23 @@ class BifurAnalysisRun(object):
         y_fit_spread = ((bvals + avals) - x_fit_vals*avals)/(betavals)
         return y_fit_spread
 
+    def pearson_coeff(self):
+        '''
+        Returns the pearson coefficient of our Bifurcation Analysis results.
+        Values near -1 or +1 indicate highly correlated binary variables.
+        '''
+        n11 = self.a
+        n00 = self.d
+        n10 = self.c
+        n01 = self.d
+        nA1 = n01 + n11
+        n1A = n10 + n11
+        n0A = n01 + n00
+        n1A = n10 + n11
+        numerator = (n11*n00) - (n10*n01)
+        denominator = np.sqrt(nA1*n1A*n0A*nA0)
+        return numerator / denominator
+
     def event_contamination(self):
         return self.y_dc() * self.y_fit() * self.total_events
 
@@ -128,43 +139,4 @@ class BifurAnalysisRun(object):
         return self.wrongness_val(y_1, y_2)
 
 if __name__ == "__main__":
-        BA = BifurAnalysisRun(bifurcation_boxes, acceptance_rates)
-        print("y_dc:\n" + str(BA.y_dc()))
-        print("y_fit:\n" + str(BA.y_fit()))
-        print("uncertainty on y_dc:\n" + str(BA.y_dc_unc()))
-        print("uncertainty on y_fit:\n" + str(BA.y_fit_unc()))
-        print("Total events fed into B.A.: " + str(BA.total_events))
-        print("Contamination assuming all events are background: ")
-        print(BA.event_contamination())
-        print("Contamination uncertainty: " + str(BA.event_contamination_unc()))
-
-        y1_range = [0., 0.1]
-        y2_range = [0., 0.1]
-        extend_range = y1_range + y2_range
-        y1_arr = np.arange(y1_range[0], y1_range[1], 0.0001) #Leakage rate of DC cuts
-        y2_arr = np.arange(y2_range[0],y2_range[1], 0.0001) #Leakage rate of Fit Class. Cuts
-        X,Y = pl.meshgrid(y1_arr, y2_arr)
-
-        #Plot the heatmap showing where the y_dc and y_fit minima are
-        Z = BA(X,Y)
-        im = plt.imshow(Z, aspect='auto', origin='lower',extent=extend_range)
-        plt.colorbar()
-        plt.xlabel("Data Cleaning Cut Leakage Fraction")
-        plt.ylabel("Fit Classifier Cut Leakage Fraction")
-        plt.title("Goodness of solution parameter in Contamination\n" +\
-                "Contamination numbers from SNO")
-        plt.show()
-
-        #Show the histograms for y_dc and y_fit uncertainties with boostrapping
-        y_dc_spread = BA.y_dc_bootstrap_unc(1000000)
-        y_fit_spread = BA.y_fit_bootstrap_unc(1000000)
-        plt.hist(y_dc_spread, 100, facecolor='green', alpha=0.75)
-        plt.title("Distribution of data cleaning cut branch fractional leakage")
-        plt.xlabel("Y_DC")
-        plt.ylabel("Probability (arb. units)")
-        plt.show()
-        plt.hist(y_fit_spread, 200, facecolor='blue', alpha=0.75)
-        plt.title("Distribution of fit classifier cut branch fractional leakage")
-        plt.xlabel("Y_Fit")
-        plt.ylabel("Probability (arb. units)")
-        plt.show()
+    print("NO IMPLEMENTATION OF THE STUFFS HERE")
