@@ -20,6 +20,9 @@ of cuts (DC and Fit classifiers) are defined as you want in each directory.
      for each event in the file.
   3) Pass all of the ntuples to the code in ./BifurcatedAnalysis to populate your
      Pass-fail boxes used in the bifurcated analysis contamination estimation.
+     NOTE: You can also select your cut mask and whether to only use B14 or ITR.
+     These should come immediately following the program call.  That is, place
+     all filenames to pass in at the end of the program call.
 
   4) Move the root files into the ./estimator directory in each of their relevant
      subdirectories. Define your a, b, c, and d values output in step 3 in main.py
