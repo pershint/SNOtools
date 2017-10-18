@@ -8,6 +8,7 @@
 #include <TLegend.h>
 #include <TApplication.h>
 
+#include <stdlib.h>
 #include <iostream>
 #include <typeinfo>
 #include <string>
@@ -17,7 +18,45 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-  // Define our histograms
+  //Get filenames from command line
+  int cut_DCmask = 0b1111100011100;  //DC branch of contamination study
+  int DC_trigmask = 0b1000000000; //OwlEHi trigger bit
+  bool B14only = false;
+  bool ITRonly = false;
+  bool commandline_DC = false;
+  bool commandline_trig = false;
+  int numentries = 1; //Have the filename itself
+  for(int i=1; i<argc; i++)
+  {
+    if( argv[i] == string("-d") )
+    {
+      numentries++;
+      commandline_DC = true;
+      cerr << "found it" << endl;
+      continue;
+    }
+    if( commandline_DC == true )
+    {
+      numentries++;
+      cut_DCmask = atoi(argv[i]);
+      commandline_DC = false;
+      continue;
+    }
+    if( argv[i] == string("-b") )
+    {
+      numentries++;
+      B14only = true;
+      continue;
+    }
+    if( argv[i] == string("-i") )
+    {
+      numentries++;
+      ITRonly = true;
+      continue;
+    }
+  }
+
+ // Define our histograms
 
   TApplication* myapp = new TApplication("myapp",0,0);
 
@@ -27,13 +66,9 @@ int main(int argc, char** argv)
   TH2F* h_B14ITR_dirty = new TH2F("h_B14ITR_dirty", "h_B14ITR_dirty", 50,0.,1.,50,-0.5,2.);
 
 
-  //Define cuts here
+  //Define pathological cuts here
   int path_DCmask = 0b1110000011100010;  //Pathological cuts for contamination study
-  int cut_DCmask = 0b1111100011100;  //DC branch of contamination study
-  
   int path_trigmask = 0b1010001100000;  //ESum, PGD, and PED triggers
-  int DC_trigmask = 0b1000000000; //OwlEHi trigger bit
-
   double E_low = 5.5;   //MeV
   double E_high = 9.0;  //MeV
   double r_cut = 5500;  //mm
@@ -48,7 +83,7 @@ int main(int argc, char** argv)
   int c = 0;
   int d = 0;
 
-  for (int f=1; f<argc; f++)
+  for (int f=numentries; f<argc; f++)
   {
     const string& filename = string(argv[f]);
     TFile* mafile = TFile::Open(filename.c_str(),"READ");
@@ -87,10 +122,20 @@ int main(int argc, char** argv)
       if(trigWord & path_trigmask) //skip entry if trigger has an Esum trigger
         continue;
       //Now, first see if the event passes the classifiers
-      if((beta14 < b14_low) | (b14_high < beta14))
-        Class_clean = 0;
-      if(ITR < itr_low)
-        Class_clean = 0;
+      if(B14only){
+        if((beta14 < b14_low) | (b14_high < beta14))
+          Class_clean = 0;
+      }
+      else if(ITRonly){
+        if(ITR < itr_low)
+          Class_clean = 0;
+      }
+      else{
+        if((beta14 < b14_low) | (b14_high < beta14))
+          Class_clean = 0;
+        if(ITR < itr_low)
+          Class_clean = 0;
+      }
 
       //Next, see if the event is clean accoding to the defined DC branch 
       if(~(dcFlagged) & cut_DCmask) //is dirty if dcFlagged has any cut_DCmask bits
@@ -116,7 +161,9 @@ int main(int argc, char** argv)
   //Get the tree that has the entries
   } //End ntuple file
 
-  cout << "Printing variables to see if stuff works..." << endl;
+  cout << "Data cleaning mask used in DC branch: " << cut_DCmask << endl;
+  cout << "Used ITR only?" << ITRonly << endl;
+  cout << "Used B14 only?" << B14only << endl;
   cout << "a: " << a << endl;
   cout << "b: " << b << endl;
   cout << "c: " << c << endl;
