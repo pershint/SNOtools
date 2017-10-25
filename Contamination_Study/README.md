@@ -13,7 +13,7 @@ BEFORE GOING ON: Ensure that the pathological cuts are defined the same in all
 three codes used in the following three steps.  Also make sure that your branches
 of cuts (DC and Fit classifiers) are defined as you want in each directory.
 
-  PART 1: USING THE SACRIFICE ANALYSIS TOOLS TO CALCULATE YOUR ACCEPTANCE RATES
+  PART 1: USING THE ACCEPTANCE ANALYSIS TOOLS TO CALCULATE YOUR ACCEPTANCE RATES
 
   1) Run calibration data through the code in ./DC_sacrifice to calculate your
      acceptance of good physics according to the DC cuts used to produce the file.
