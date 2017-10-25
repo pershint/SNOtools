@@ -13,7 +13,7 @@ class BifurAnalysisRun(object):
     '''
     def __init__(self, bifur_boxes, acceptances):
         #SNO #SNO+Wat
-        self.a = bifur_boxes["a"] #369. #9.
+        self.a = bifur_boxes['a'] #369. #9.
         self.b = bifur_boxes["b"] #447. #1.
         self.c = bifur_boxes["c"] #15.  #1.
         self.d = bifur_boxes["d"] #94264.  #51.
@@ -115,17 +115,20 @@ class BifurAnalysisRun(object):
         Returns the pearson coefficient of our Bifurcation Analysis results.
         Values near -1 or +1 indicate highly correlated binary variables.
         '''
-        n11 = self.a
-        n00 = self.d
-        n10 = self.c
-        n01 = self.d
+        n11 = float(self.a)
+        n00 = float(self.d)
+        n10 = float(self.c)
+        n01 = float(self.b)
         nA1 = n01 + n11
         n1A = n10 + n11
         n0A = n01 + n00
-        n1A = n10 + n11
+        nA0 = n10 + n00
         numerator = (n11*n00) - (n10*n01)
         denominator = np.sqrt(nA1*n1A*n0A*nA0)
-        return numerator / denominator
+        if (numerator == 0) and (denominator==0):
+            return 0.0
+        else:
+            return numerator / denominator
 
     def event_contamination(self):
         return self.y_dc() * self.y_fit() * self.total_events

@@ -10,6 +10,37 @@ def BifurResult(bifur_dict):
     '''
     print("WOO")
 
+def CorrelationBoxes(rows, xtitles, ytitles):
+    '''
+    Takes in an array that contains arrays, each representing the
+    Pearson coefficient results calculated from the results from a
+    bifurcation analysis.  The titles label/identify each box.
+    '''
+    allrows=None
+    for row in rows:
+        if allrows==None:
+            allrows=np.array([row])
+            continue
+        nextrow = np.array([row])
+        allrows = np.concatenate((allrows,nextrow))
+    #Plot the heatmap showing where the y_dc and y_fit minima are
+    im = plt.imshow(allrows,interpolation='none', aspect ='auto')
+    plt.colorbar()
+    plt.tick_params(axis='both', which='both', bottom='off', top='off', \
+            labelbottom='off', labelleft='off')
+    for i,row in enumerate(allrows):
+        for j,column in enumerate(row):
+            plt.text(j,i, str(np.around(column,2)), size = '20', \
+                backgroundcolor='white')
+    for k,ytitle in enumerate(ytitles):
+        plt.text(-1.0,k, str(ytitle), size = '12')
+    for k,xtitle in enumerate(xtitles):
+        plt.text(float(k)-0.1,float(len(allrows))-0.45, str(xtitle), size = '12',rotation=45)
+   #FIXME: Need titles to be set at the right ticks
+    plt.title("Pearson Coefficient of Individual Cuts")
+    plt.show()
+
+
 def BoxDistribution(BifurAnalysis):
     '''
     Takes in the BifurcationAnalysis class and plots out the heatmap giving the

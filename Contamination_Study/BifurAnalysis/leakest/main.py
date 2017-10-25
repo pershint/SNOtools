@@ -9,12 +9,13 @@ import glob
 import pylab as pl
 import lib.playDarts as pd
 import lib.resultgetter as rg
+import lib.maskbuilder as mb
 import lib.leakestimator as le
 import lib.plots as plots
 
 
 MAINDIR = os.path.dirname(__file__)
-RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "..", "results"))
+RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "..", "results", "OpenGolden_MayProcessed"))
 
 
 bifurcation_boxes = {"a": 9., "b": 1., "c": 1., "d": 83.}
@@ -40,7 +41,30 @@ if __name__ == '__main__':
     #Show the boxes and Num. events in each box
     plots.BoxDistribution(BA)
     #Show the best fit y_dc and y_fit values given the bifurcation results
-    plots.Contamination_Minimum(BA)
+    #plots.Contamination_Minimum(BA)
 
     #Show the histograms for y_dc and y_fit uncertainties with boostrapping
-    plots.LeakageUncertainty_Bootstrap_Plot(BA)
+    #plots.LeakageUncertainty_Bootstrap_Plot(BA)
+
+    #Now, let's grab all the results in the RESULTDIR,
+    #Organize them into rows, and plot the pearson coeffs.
+    beta14_result_filenames = glob.glob(RESULTDIR + "/*b_results.out")
+    itr_result_filenames = glob.glob(RESULTDIR + "/*i_results.out")
+    beta14_dc_PCs = []   #Will be an array of pearson coeffs.
+    itr_dc_PCs = []      #Will be an array of pearson coeffs
+    column_titles = []
+    DCmask_dict = mb.get_dcwords()
+    #Fill our pearson coefficients into rows
+    #FIXME: Assuming that the indices will increment the same for B14 and ITR
+    for name in beta14_result_filenames:
+        result_dict = rg.GetResultDict(name)
+        BA = le.BifurAnalysisRun(result_dict, acceptance_rates)
+        beta14_dc_PCs.append(BA.pearson_coeff())
+        column_titles.append(DCmask_dict[mb.int_to_binary_bit(int(result_dict["DC_mask"]))])
+    for name in itr_result_filenames:
+        result_dict = rg.GetResultDict(name)
+        BA = le.BifurAnalysisRun(result_dict, acceptance_rates)
+        itr_dc_PCs.append(BA.pearson_coeff())
+    rows = [beta14_dc_PCs, itr_dc_PCs]
+    row_titles = ["beta14","ITR"]
+    plots.CorrelationBoxes(rows, column_titles, row_titles)

@@ -18,16 +18,16 @@ def GetResultDict(filename):
         for box in boxes:
             if box+":" in line:
                 value = line.split(": ")
-                result_dict[box] = value[1]
+                result_dict[box] = float(value[1].rstrip("\n"))
         if "Data cleaning mask" in line:
             value = line.split(": ")
-            result_dict["DC_mask"] = value[1]
+            result_dict["DC_mask"] = value[1].rstrip('\n')
         if "Used ITR only?" in line:
             value = line.split("?")
-            result_dict["ITR_only"] = value[1]
+            result_dict["ITR_only"] = value[1].rstrip('\n')
         if "Used B14 only?" in line:
             value = line.split("?")
-            result_dict["B14_only"] = value[1]
+            result_dict["B14_only"] = value[1].rstrip('\n')
     return result_dict
 
 if __name__ == "__main__":
