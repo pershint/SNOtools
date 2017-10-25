@@ -13,6 +13,8 @@ BEFORE GOING ON: Ensure that the pathological cuts are defined the same in all
 three codes used in the following three steps.  Also make sure that your branches
 of cuts (DC and Fit classifiers) are defined as you want in each directory.
 
+  PART 1: USING THE SACRIFICE ANALYSIS TOOLS TO CALCULATE YOUR ACCEPTANCE RATES
+
   1) Run calibration data through the code in ./DC_sacrifice to calculate your
      acceptance of good physics according to the DC cuts used to produce the file.
   2) Run calibration data through the code in ./Beta14ITR_sacrifice to calculate
@@ -23,6 +25,7 @@ of cuts (DC and Fit classifiers) are defined as you want in each directory.
      ./leakest/main.py.  You will want the code in ./leakest/main.py to use
      your acceptance values, so change as needed.
 
+  PART 2: RUN THE BIFURCATED ANALYSIS 
   3) Pass all of the ntuples that are associated with your physics data 
      to the code in ./BifurcatedAnalysis to populate your
      Pass-fail boxes used in the bifurcated analysis contamination estimation.
@@ -34,7 +37,10 @@ of cuts (DC and Fit classifiers) are defined as you want in each directory.
   4) Move the .out files into the "./results" directory; you may want to
      make a new subdirectory that will hold the .out files.
 
-   5) Run ./leakest/main.py.  The script will estimate the errors on your
+  PART 3: CALCULATE THE LEAKAGE RATES IN THE SAMPLE ANALYZED IN PART 2 USING
+  THE ACCEPTANCES FROM PART 1
+
+  5) Run ./leakest/main.py.  The script will estimate the errors on your
      acceptance rates output from steps 1 and 2, and then apply those along with
      poissonian errors for a,b,c, and d to estimate your contamination rate and
      uncertainty for each cut.
