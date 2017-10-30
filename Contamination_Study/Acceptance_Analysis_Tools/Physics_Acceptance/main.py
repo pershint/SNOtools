@@ -29,7 +29,7 @@ FITDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_Fitsacs"))
 ######### VARIABLES ########
 branch = "DC"
 SACDIR = DCDIR
-db_entry = "N16_Positions_1.json"
+db_entry = "N16_Positions_2.json"    #Point to which N16 run info you want
 pcolor = 'b'
 ######## /VARIABLES #######
 
@@ -96,8 +96,8 @@ if __name__ == '__main__':
         calib_dict = json.load(f)
 
     #Try the plotting out
-    zp, fs, fs_unc = plot_sacrificevsZ(calib_dict, filenames, branch)
-    zp = np.array(zp)
+    z_pos, fs, fs_unc = plot_sacrificevsZ(calib_dict, filenames, branch)
+    z_pos = np.array(zp)
     fs = np.array(fs)
     fs_unc = np.array(fs_unc)
     #Now, let's get the average and standard deviation
