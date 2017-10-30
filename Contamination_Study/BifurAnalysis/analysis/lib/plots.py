@@ -3,13 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pylab as pl
 
-def BifurResult(bifur_dict):
-    '''
-    Takes in a dictionary output by resultgetter.py and shows the bifurcation
-    analysis box result.
-    '''
-    print("WOO")
-
 def CorrelationBoxes(rows, xtitles, ytitles):
     '''
     Takes in an array that contains arrays, each representing the
@@ -30,14 +23,14 @@ def CorrelationBoxes(rows, xtitles, ytitles):
             labelbottom='off', labelleft='off')
     for i,row in enumerate(allrows):
         for j,column in enumerate(row):
-            plt.text(j,i, str(np.around(column,2)), size = '20', \
+            plt.text(j-0.2,i, str(np.around(column,2)), size = '20', \
                 backgroundcolor='white')
     for k,ytitle in enumerate(ytitles):
-        plt.text(-1.0,k, str(ytitle), size = '12')
+        plt.text(-1.44,k, str(ytitle), size = '16')
     for k,xtitle in enumerate(xtitles):
-        plt.text(float(k)-0.1,float(len(allrows))-0.45, str(xtitle), size = '12',rotation=45)
+        plt.text(float(k)-0.1,float(len(allrows))-0.32, str(xtitle), size = '16',rotation=-25)
    #FIXME: Need titles to be set at the right ticks
-    plt.title("Pearson Coefficient of Individual Cuts")
+    plt.title("Pearson Coefficient of Individual Cuts", size="20")
     plt.show()
 
 
