@@ -210,7 +210,7 @@ int main(int argc, char** argv)
     delete mafile;
   } //End ntuple file loop
 
-  cout << "Used DC branch and Fit branch?" << (!DCsonly) << endl;
+  cout << "Used DC branch and Fit branch?" << (!DCsonly & !Fitsonly) << endl;
   if(!DCsonly)
     cout << "Data cleaning mask used in DC branch: " << cut_DCmask << endl;
   else
