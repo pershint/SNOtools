@@ -23,13 +23,13 @@ import glob
 
 MAINDIR = os.path.dirname(__file__)
 DBDIR = os.path.abspath(os.path.join(MAINDIR, "DB"))
-DCDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_DCsacs"))
-FITDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_Fitsacs"))
+DCDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_DCsacs", "4_9_MeV"))
+FITDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_Fitsacs","4_9_MeV"))
 
 ######### VARIABLES ########
-branch = "DC"
-SACDIR = DCDIR
-db_entry = "N16_Positions_2.json"    #Point to which N16 run info you want
+branch = "DC"   #Either DC or Fit
+SACDIR = DCDIR  #Choose if you're looking at the sacrifice for the fits or DC branch
+db_entry = "N16_Positions_1.json"    #Point to which N16 run info you want
 pcolor = 'b'
 ######## /VARIABLES #######
 
@@ -43,6 +43,7 @@ def plot_sacrificevsZ(calib_run_dict, sacrifice_filenames, branch):
     for run in calib_run_dict["Runs"]:
         for filename in sacrifice_filenames:
             if run in filename:
+                print(run)
                 #Found the filename corresponding to run in meta
                 zposition = calib_run_dict["Runs"][run][2]
                 z_positions.append(zposition)
@@ -97,7 +98,7 @@ if __name__ == '__main__':
 
     #Try the plotting out
     z_pos, fs, fs_unc = plot_sacrificevsZ(calib_dict, filenames, branch)
-    z_pos = np.array(zp)
+    z_pos = np.array(z_pos)
     fs = np.array(fs)
     fs_unc = np.array(fs_unc)
     #Now, let's get the average and standard deviation

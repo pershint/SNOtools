@@ -21,9 +21,11 @@ RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "..", "results", "OpenGolden_M
 
 bifurcation_boxes = {"a": 9., "b": 1., "c": 1., "d": 83.}
 bifurcation_boxes_SNO = {"a":369., "b":447., "c":15., "d":94264.}
-acceptance_rates = {"DC": 0.9273, "DC_unc": 0.0007, "Fit":0.9984, \
-        "Fit_unc": 0.0005, "E_range":[5.5,9.0]}
-acceptance_rates_SNO = {"DC": 0.9998, "DC_unc": 0.00005, "Fit": 0.995, "Fit_unc":0.0005}
+#acceptance_rates = {"DC": 0.9273, "DC_unc": 0.0007, "Fit":0.9984, \
+#        "Fit_unc": 0.0005, "E_range":[5.5,9.0]}
+acceptance_rates = {"DC": 0.93031, "DC_unc": 0.0004, "Fit":0.9948, \
+        "Fit_unc": 0.0001, "E_range":[4.0,9.0]}
+cceptance_rates_SNO = {"DC": 0.9998, "DC_unc": 0.00005, "Fit": 0.995, "Fit_unc":0.0005}
 
 def getPhiRows(cut1_list, cut2_list, PC_list, isSymmetric):
     '''
