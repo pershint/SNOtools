@@ -13,10 +13,11 @@ import lib.maskbuilder as mb
 import lib.leakestimator as le
 import lib.plots as plots
 
-DEBUG = False
+DEBUG = True
 
 MAINDIR = os.path.dirname(__file__)
-RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "..", "results", "OpenGolden_MayProcessed"))
+RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "..", "results",\
+        "OpenGolden_MayProcessed","4_9_MeV"))
 
 
 bifurcation_boxes = {"a": 9., "b": 1., "c": 1., "d": 83.}
@@ -115,9 +116,11 @@ def getTitles(result_dict):
 
 if __name__ == '__main__':
     #For fun, let's grab all the results
+    allresult_filenames = glob.glob(RESULTDIR + "/*_results.out")
     if DEBUG:
         #Let's grab the list of files in the results directory
-        BA = le.BifurAnalysisRun(bifurcation_boxes, acceptance_rates)
+        result_dict = rg.GetResultDict(allresult_filenames[0]) #Has the file's results
+        BA = le.BifurAnalysisRun(result_dict, acceptance_rates)
         print("y_dc:\n" + str(BA.y_dc()))
         print("y_fit:\n" + str(BA.y_fit()))
         print("uncertainty on y_dc:\n" + str(BA.y_dc_unc()))
@@ -138,7 +141,6 @@ if __name__ == '__main__':
     
     #The following takes bifurcation analysis results for single cuts and
     #plots out the pearson coefficients in a grid fashion
-    allresult_filenames = glob.glob(RESULTDIR + "/*_results.out")
     cut1_list = []
     cut2_list = []
     PC_list = []
