@@ -74,7 +74,11 @@ int main(int argc, char** argv)
   //int prescaleonly
   int path_DCmask = 0b1110000011100010;  //Pathological cuts for contamination study
   int cut_DCmask = 0b1111100011100;  //DC branch of contamination study
-  
+ 
+  double E_low = 4.0;   //MeV
+  double E_high = 9.0;  //MeV
+  double r_cut = 5500;  //mm
+
   int path_trigmask = 0b1010001100000;  //ESum, PGD, and PED triggers
   int DC_trigmask = 0b1000000000; //OwlEHi trigger bit
 
@@ -104,7 +108,7 @@ int main(int argc, char** argv)
   {
     T->GetEntry(entry);
     //First, we skip events defined as pathological
-    if((energy > 9) || (energy < 5.5) || (posr > 5500))
+    if((energy > E_high) || (energy < E_low) || (posr > r_cut))
       continue;
     if(!fitValid)
       continue;

@@ -79,7 +79,7 @@ int main(int argc, char** argv)
   //Define cuts here
   int path_DCmask = 0b1110000011100010;  //Pathological cuts for contamination study 
   int path_trigmask = 0b1010001100000;  //ESum, PGD, and PED triggers
-  double E_low = 5.5;   //MeV
+  double E_low = 4.0;   //MeV
   double E_high = 9.0;  //MeV
   double r_cut = 5500;  //mm
   double b14_low = -0.12;
