@@ -4,6 +4,7 @@
 import maskbuilder as mb
 import resultgetter as rg
 import leakestimator as le
+import numpy as np
 
 def getTitles(result_dict):
     '''

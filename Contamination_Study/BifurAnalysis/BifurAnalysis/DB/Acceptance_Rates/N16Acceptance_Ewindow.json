@@ -2,14 +2,14 @@
     "EnergyRanges": [
     { "EnergyRange": [4,9],
       "DC": 0.93031,
-      "DC_unc": 0.0004, 
+      "DC_unc": 0.0050, 
       "Fit": 0.9948,
-      "Fit_unc": 0.0001
+      "Fit_unc": 0.0017
     },
     { "EnergyRange": [5.5,9],
       "DC": 0.9273,
-      "DC_unc": 0.0007,
+      "DC_unc": 0.0058,
       "Fit": 0.9948,
-      "Fit_unc":0.0005
+      "Fit_unc":0.00054
     }]
 }

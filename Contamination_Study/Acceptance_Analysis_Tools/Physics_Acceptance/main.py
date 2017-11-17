@@ -78,15 +78,16 @@ def plot_sacrificevsZ(calib_run_dict, sacrifice_filenames, branch):
     plt.show()
     return z_positions, fractional_sac, fractional_sac_unc
 
-#Nabbed shamelessly from stack overvlow
 def weighted_avg_and_std(values, weights):
      """
      Returns the weighted average and standard deviation given values and
      Their weights.  The weights are assumed to be ((1/unc(value)**2))
      """
      average = np.average(values, weights=weights)
-     variance = 1./np.sqrt(np.sum(weights)) #np.average((values-average)**2, weights=weights)  # Fast and numerically precise
-     return (average, variance)
+     variance = np.sqrt((np.sum(weights))/((np.sum(weights))**2))
+     weighted_variance = 1./np.sqrt(np.sum(weights))
+     tot_variance = np.sqrt((variance**2) + (weighted_variance**2))
+     return (average, tot_variance)
 
 if __name__ == '__main__':
     #Choose what branch of cuts you want to look at (DC or Fit)
