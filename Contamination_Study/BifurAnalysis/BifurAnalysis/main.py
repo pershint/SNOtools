@@ -14,12 +14,12 @@ import lib.correlationestimator as ce
 import lib.plots as plots
 import numpy as np
 
-DEBUG = True
+DEBUG = False
 
 MAINDIR = os.path.dirname(__file__)
 RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "..", "results", "OpenGolden_MayProcessed"))
 ERANGE = "5p5_9_MeV"
-FILENAME = "/*_results.out"
+FILENAME = "/SingleCuts/*_results.out"
 ACCDIR = os.path.abspath(os.path.join(MAINDIR,"DB","Acceptance_Rates"))
 
 
@@ -52,12 +52,31 @@ if __name__ == '__main__':
     
         #Show the histograms for y_dc and y_fit uncertainties with boostrapping
         plots.LeakageUncertainty_Bootstrap_Plot(BA)
-    
+   
+    ############ CORRELATIONS FOR BIFURCATION ANALYSIS###########
     #The following takes bifurcation analysis results for single cuts and
     #plots out the pearson coefficients in a grid fashion
     isSymmetric = True
-    column_titles, row_titles, PC_rows = ce.buildTitlesAndPhiMatrix(allresult_filenames, acceptance_rates, isSymmetric)
-    plots.CorrelationBoxes(PC_rows, column_titles, row_titles)
+    #Cut matrices come out ordered alphabetically in PC and cov matrices
+    column_titles, row_titles, PC_rows, cov_rows = ce.buildTitlesAndPhiCorrMatrices(allresult_filenames, acceptance_rates, isSymmetric)
+    plots.PearsonCoeffMatrix(PC_rows, column_titles, row_titles)
+    plots.CovarianceMatrix(cov_rows, column_titles, row_titles)
+
+    #Get probabilities to shoot with correlations
+    prob_dict, probvar_dict = ce.getCutProbabilitiesAndVariances(allresult_filenames, \
+            acceptance_rates) #sorted alphabetically
+    prob_vec, probvar_vec = [], []
+    for key in prob_dict:
+        prob_vec.append(prob_dict[key])
+    for key in probvar_dict:
+        probvar_vec.append(probvar_dict[key])
+    CovMatrix = ce.CovarianceMatrix(cov_rows, prob_vec, probvar_vec)
+    CovMatrix.choleskydecompose()
+    i = 0
+    while i < 10:
+        CovMatrix.shoot_cuts()
+        i+=1
+    ######### END CORRELATIONS CODE #############
 
     ###########
     #The following is hacky, but will get the job done.  We
