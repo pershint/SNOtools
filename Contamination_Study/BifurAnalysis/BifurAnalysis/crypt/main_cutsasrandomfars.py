@@ -59,32 +59,62 @@ if __name__ == '__main__':
     #plots out the pearson coefficients in a grid fashion
     isSymmetric = True
     #Cut matrices come out ordered alphabetically in PC and cov matrices
-    #TODO: We now need code that will build up distributions of variables
-    #From B14, ITR, and data cleaning cuts.  The Pearson Coefficients and
-    #variances will be fed in below.
     column_titles, row_titles, PC_matrix, cov_matrix = ce.buildTitlesAndPhiCorrMatrices(allresult_filenames, acceptance_rates, isSymmetric)
     plots.PearsonCoeffMatrix(PC_matrix, column_titles, row_titles)
     plots.CovarianceMatrix(cov_matrix, column_titles, row_titles)
 
-    variables = []
-    varibvariances = []
-    CovMatrix = ce.CovarianceMatrix(cov_matrix, variables, varibvariances)
+    #Get probabilities to shoot with correlations
+    prob_dict, probvar_dict = ce.getCutProbabilitiesAndVariances(allresult_filenames, \
+            acceptance_rates) #sorted alphabetically
+    prob_vec, probvar_vec = [], []
+    for key in prob_dict:
+        prob_vec.append(prob_dict[key])
+    for key in probvar_dict:
+        probvar_vec.append(probvar_dict[key])
+    print("PROB VEC: " + str(prob_vec))
+    CovMatrix = ce.CovarianceMatrix(cov_matrix, prob_vec, probvar_vec)
     CovMatrix.choleskydecompose()
     n = 94 #FIXME: have this filled with the number from the bifurcation
            #analysis result
+    if n == 1:
+        hist_passfail = []
+        i = 0
+        B14_c, B14_nc = [], []
+        while i < 10000:
+            correlated_probs,noncorr_probs, pass_fail = CovMatrix.shoot_corrcuts(1)
+            B14_c.append(correlated_probs[3])
+            B14_nc.append(noncorr_probs[3])
+            hist_passfail.append(pass_fail[0])
+            i+=1
+        plt.hist(B14_c, 50)
+        plt.xlabel("Probability of flagging an event")
+        plt.title("Correlated spread on probability of event failing neckcut")
+        plt.show()
+        plt.hist(B14_nc, 50)
+        plt.xlabel("Probability of flagging an event")
+        plt.title("Uncorrelated spread on probability of event failing neckcut")
+        plt.show()
+    else:
         cutmap = prob_dict.keys()
         BoxMaker = ce.BA_Correlations(cutmap,cutmap[2:len(cutmap)],cutmap[0:2]) 
         all_passfails = []
         i = 0
         while i < 500:
-            fired_variable_sets = CovMatrix.shoot_corrcuts(n)
-            #TODO: need a function that takes in the variables, the cut
-            #Labels, and gets the cut thresholds from RATDB. Checks if the
-            #Cut passes or fails.
-            #passfail_flags = check_passfail()
-            #BoxMaker.fillBABoxes(passfail_flags)
+            correlated_probs,noncorr_probs, passfail_flags = CovMatrix.shoot_corrcuts(n)
+            BoxMaker.fillBABoxes(passfail_flags)
             i+=1
-           
+        print(BoxMaker.a_vals)
+        plt.hist(BoxMaker.a_vals, 18)
+        plt.xlabel("# events in pass-pass box")
+        plt.title("pass-pass count for random shot experiment with" + \
+                "94 events (correlations in cuts included)")
+        plt.show()
+        plt.hist(pd.RandShoot(9, np.sqrt(9), 500), 18)
+        plt.xlabel("# events in fail-fail box")
+        plt.title("statistical uncertainty in fail-fail count from open " +\
+                "golden physics analysis")
+        plt.show()
+            
     ######### END CORRELATIONS CODE #############
 
     ###########

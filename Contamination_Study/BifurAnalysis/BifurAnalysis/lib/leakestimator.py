@@ -27,13 +27,6 @@ class BifurAnalysisRun(object):
         self.phy_events = self.a
         self.total_events = self.bkg_events + self.phy_events
 
-        #Assume our cuts are Bernoulli random variables. X=1 if the cut flags,
-        #X = 0 if the cut fails.
-        self.p_cut1 = (self.a + self.b)/ (self.total_events) #Prob. to pass cut1
-        self.p_cut2 = (self.a + self.c)/ (self.total_events) #Prob. to pass cut2
-        self.V_cut1 = self.p_cut1*(1.-self.p_cut1)
-        self.V_cut2 = self.p_cut2*(1.-self.p_cut2)
-
     #Functions defining how "off" each bifurcation analysis eqn is from true
     def p_1(self,y_1):
         return self.a + self.c - (self.x_dc * self.phy_events) - \
