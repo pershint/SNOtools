@@ -28,7 +28,7 @@ int main(int argc, char** argv)
   //Define pathological cuts here
   int path_DCmask = 0b1110000011100010;  //default Pathological cuts study
   int path_trigmask = 0b1010001100000;  //ESum, PGD, and PED triggers
-  double E_low = 4.0;                   //MeV (default 5.5)
+  double E_low = 5.5;                   //MeV (default 5.5)
   double E_high = 9.0;                  //MeV (default 9.0)
   double r_cut = 5500;                  //mm  (default 5500)
   double b14_low = -0.12;               //default -0.12

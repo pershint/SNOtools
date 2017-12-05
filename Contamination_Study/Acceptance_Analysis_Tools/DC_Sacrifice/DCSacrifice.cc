@@ -75,7 +75,7 @@ int main(int argc, char** argv)
   int path_DCmask = 0b1110000011100010;  //Pathological cuts for contamination study
   int cut_DCmask = 0b1111100011100;  //DC branch of contamination study
  
-  double E_low = 4.0;   //MeV
+  double E_low = 5.5;   //MeV
   double E_high = 9.0;  //MeV
   double r_cut = 5500;  //mm
 
