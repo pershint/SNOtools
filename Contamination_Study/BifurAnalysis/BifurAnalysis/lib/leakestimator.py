@@ -10,6 +10,8 @@ class BifurAnalysisRun(object):
     '''
     bifur_boxes is a dictionary of the form output from the lib.resultgetter
     functions.  One of the acceptance dicts should be fed in from above.
+    #ASSUMPTIONS: b is the # events that pass the fitter, but fail DC
+                  c is the # events that pass DC, but fail the fitter
     '''
     def __init__(self, bifur_boxes, acceptances):
         #SNO #SNO+Wat
@@ -29,11 +31,11 @@ class BifurAnalysisRun(object):
 
     #Functions defining how "off" each bifurcation analysis eqn is from true
     def p_1(self,y_1):
-        return self.a + self.c - (self.x_dc * self.phy_events) - \
+        return self.a + self.b - (self.x_dc * self.phy_events) - \
                 (y_1 * self.bkg_events)
 
     def p_2(self,y_2):
-        return self.a + self.b - (self.x_fc * self.phy_events) - \
+        return self.a + self.c - (self.x_fc * self.phy_events) - \
                 (y_2 * self.bkg_events)
 
     def p_3(self, y_1, y_2):
@@ -45,10 +47,10 @@ class BifurAnalysisRun(object):
                 (self.p_3(y_1, y_2))**2)
 
     def y_dc(self):
-        return ((self.a + self.c) - self.x_dc*self.a)/self.bkg_events
+        return ((self.a + self.b) - self.x_dc*self.a)/self.bkg_events
 
     def y_fit(self):
-        return ((self.b + self.a) - self.x_fc*self.a)/self.bkg_events
+        return ((self.c + self.a) - self.x_fc*self.a)/self.bkg_events
 
     def y_dc_unc(self):
         #Calculate the uncertainty in y_1
