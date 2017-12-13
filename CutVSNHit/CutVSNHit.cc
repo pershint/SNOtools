@@ -65,10 +65,9 @@ int main(int argc, char** argv)
       h_AllEvents->Fill(nhits);
       if (!(dcApplied))  // Checks there was DC applied to this event
         continue;
-      if (dcApplied & dcFlagged != dcFlagged){
-        //Event is flagged as "clean" even though it's not in the applied mask
-        //Check for bugs in DC
-        continue;
+      if (dcApplied & cut_mask != cut_mask){
+        cout << "YOU'VE CHOSEN A CUT MASK THAT'S NOT A SUBSET OF" <<
+        "THE CUTS APPLIED WHEN DATA CLEANING WAS RUN."  << endl;
       }
       if (~(dcFlagged) & cut_mask){   //true if an event was flagged cut_mask bit is in dcFlagged
         h_FlaggedEvents->Fill(nhits);
