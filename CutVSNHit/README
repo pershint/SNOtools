@@ -1,0 +1,22 @@
+Usage: ./CutVSNHit [outputfilename.root] [list of files to check for DC]
+Example: ./CutVSNHit thegoods.root /path/to/files/*.ntuple.root
+
+
+This program will output a root file with several histograms detailing the
+Number of events that were flagged vs. nhit in the input root files.
+
+Note that right now, the check is only made on events that have the isCal bool
+as true.  For regular golden runs, remove this part of the check.
+
+#######NOTE######
+Before usage, you will need to modify the variable cut_mask in CutVSNHit.cc.
+This is the mask that will be checked against for whether an event is "dirty"
+or "clean".
+################
+
+If you want to produce outputs for several different masks, I would suggest
+Adding a vector object at code start that contains all of the cuts you are interested in.  
+Nest the current code in a for loop that will run everything for each cut mask
+in your vector.  You would have to make sure you append the cut mask integer to
+ the output root name, or add it as an entry to the output root file,
+so you know which file is associated with each cut.
