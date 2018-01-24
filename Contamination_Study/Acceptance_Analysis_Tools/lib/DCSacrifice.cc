@@ -80,7 +80,7 @@ int main(int argc, char** argv)
   double r_cut = 5500;  //mm
 
   int path_trigmask = 0b1010001100000;  //ESum, PGD, and PED triggers
-  int DC_trigmask = 0b1000000000; //OwlEHi trigger bit
+  int cut_trigmask = 0b1000000000; //OwlEHi trigger bit
 
   //open the file now
   //const string& filename = infile;
@@ -123,7 +123,7 @@ int main(int argc, char** argv)
 
     //Now, fill our histogram with all events passing pathological cuts
     h_AllEvents->Fill(energy);
-    if ((~(dcFlagged) & cut_DCmask) || (triggerWord & DC_trigmask)){
+    if ((~(dcFlagged) & cut_DCmask) || (triggerWord & cut_trigmask)){
       //true if an event is dirty according to DC branch or has OwlEHi
       h_FlaggedEvents->Fill(energy);
     }
