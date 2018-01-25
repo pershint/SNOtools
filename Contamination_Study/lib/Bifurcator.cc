@@ -1,120 +1,83 @@
-#include <TH1D.h>
-#include <TCut.h>
-#include <TH2.h>
 #include <TFile.h>
 #include <TTree.h>
-#include <TCanvas.h>
-#include <TStyle.h>
-#include <TLegend.h>
-#include <TApplication.h>
-
 #include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 #include <typeinfo>
 #include <string>
 #include <map>
 #include <iterator>
+
+#include "ConfigParser.hh"
+
 using namespace std;
+using namespace configuration;
 
 int main(int argc, char** argv)
 {
-  //These are the cut masks used if you are comparing two cuts
-  int cut_DC1 = 0;  //DC branch of contamination study
-  int cut_DC2 = 0;  //DC branch of contamination study
-  //Get filenames from command line
-  int cut_DCmask = 0b1111100011100;  //default DC branch of contamination study
-  int DC_trigmask = 0b1000000000; //OwlEHi trigger bit
-
   //Define pathological cuts here
-  int path_DCmask = 0b1110000011100010;  //default Pathological cuts study
-  int path_trigmask = 0b1010001100000;  //ESum, PGD, and PED triggers
-  double E_low = 5.5;                   //MeV (default 5.5)
-  double E_high = 9.0;                  //MeV (default 9.0)
-  double r_cut = 5500;                  //mm  (default 5500)
-  double b14_low = -0.12;               //default -0.12
-  double b14_high = 0.95;               //default 0.95
-  double itr_low = 0.55;                //default 0.55
+  int path_DCmask; 
+  int path_trigmask;
+  int cut1_DCmask;
+  int cut1_trigmask;
+  int cut2_DCmask;
+  int cut2_trigmask;
+  double E_low; 
+  double E_high;
+  double r_cut;
+  double cut1_b14_low;
+  double cut1_b14_high;
+  double cut1_itr_low;
+  double cut2_b14_low;
+  double cut2_b14_high;
+  double cut2_itr_low;
+  bool dcs_only;
+  bool fits_only;
+  //some cut selections you could apply
+  //To build this mask, see snopl.us/docs/rat/user_manual/html/node226.html
+  //int prescaleonly
+  configuration::CoParser configparse("../config/cuts_default.ini");
+  try{
+    bool dcs_only = configparse.getValueOfKey<bool>("dcs_only");
+    bool fits_only = configparse.getValueOfKey<bool>("fits_only");
+    if (dcs_only && fits_only){
+      cout << "You can't use DCs only AND fits only. Choose both false or one true"
+          << endl;
+      exit(EXIT_FAILURE);
+    }
+    
+    int path_DCmask = configparse.getValueOfKey<int>("path_DCmask");
+    int path_trigmask = configparse.getValueOfKey<int>("path_trigmask");
+    double cut2_b14_low = configparse.getValueOfKey<double>("cut2_b14_low");
+    double cut2_b14_high = configparse.getValueOfKey<double>("cut2_b14_high");
+    double cut2_itr_low = configparse.getValueOfKey<double>("cut2_itr_low");
+    int cut1_DCmask = configparse.getValueOfKey<int>("cut1_DCmask");
+    int cut1_trigmask = configparse.getValueOfKey<int>("cut1_trigmask");
+    if (dcs_only){
+      int cut2_DCmask = configparse.getValueOfKey<int>("cut2_DCmask");
+      int cut2_trigmask = configparse.getValueOfKey<int>("cut2_trigmask");
+    }
+    if (fits_only){
+      double cut1_b14_low = configparse.getValueOfKey<double>("cut1_b14_low");
+      double cut1_b14_high = configparse.getValueOfKey<double>("cut1_b14_high");
+      double cut1_itr_low = configparse.getValueOfKey<double>("cut1_itr_low");
+    }
+    double E_low = configparse.getValueOfKey<double>("E_low");
+    double E_high = configparse.getValueOfKey<double>("E_high");
+    double r_cut = configparse.getValueOfKey<double>("r_cut");
 
-  //Values turned to true depending on if the commandline is used to
-  //Choose what cuts are in each branch
-  bool DCsonly = false;
-  bool B14only = false;
-  bool ITRonly = false;
-  bool commandline_DC = false;
-  bool commandline_twoDCs = false;
-  bool commandline_trig = false;
-  bool Fitsonly = false;
-  int numentries = 1; //Have the filename itself
-
-  //Command line parsing
-  for(int i=1; i<argc; i++)
-  {
-    if( argv[i] == string("-c") )
-    {
-      numentries++;
-      Fitsonly = true;
-      continue;
-    }
-   if( argv[i] == string("-d") )
-    {
-      numentries++;
-      commandline_DC = true;
-      continue;
-    }
-    if( commandline_DC == true )
-    {
-      numentries++;
-      cut_DCmask = atoi(argv[i]);
-      commandline_DC = false;
-      continue;
-    }
-    //use this flag to feed in two data cuts for bifur analysis
-    if( argv[i] == string("-dd") )
-    {
-      numentries++;
-      commandline_twoDCs = true;
-      continue;
-    }
-    if( commandline_twoDCs == true )
-    {
-      numentries=numentries + 2;
-      cut_DC1 = atoi(argv[i]);
-      cut_DC2 = atoi(argv[i+1]);
-      DCsonly = true;
-      commandline_twoDCs = false;
-      continue;
-    }
-   if( argv[i] == string("-b") )
-    {
-      numentries++;
-      B14only = true;
-      continue;
-    }
-    if( argv[i] == string("-i") )
-    {
-      numentries++;
-      ITRonly = true;
-      continue;
-    }
-  }
-
- // Define our histograms; code crashes without this.  Thanks ROOT
-
-  TApplication* myapp = new TApplication("myapp",0,0);
-  TCanvas* c1 = new TCanvas("c1","c1",800,1200);
-  c1->Divide(2,1);
-  //Define histograms to fill in
-  TH2F* h_B14ITR_dirty = new TH2F("h_B14ITR_dirty", "h_B14ITR_dirty", 50,0.,1.,50,-0.5,2.);
-
-
+  }  catch (int e) {
+    std::cout << "ERROR READING FROM CONFIG FILE." << std::endl;
+    return 1;
+  };
   //Integers used in bifurcated analysis equation
-  int a = 0;
-  int b = 0;
-  int c = 0;
-  int d = 0;
+  int a = 0;  //Passes cut branches 1 and 2
+  int b = 0;  //Passes cut 1 but fails cut 2
+  int c = 0;  //Passes cut 2 but fails cut 1
+  int d = 0;  //Fails cut branches 1 and 2
 
   //For each ntuple, we'll check if events pass or fail each bifurcation branch cut
-  for (int f=numentries; f<argc; f++)
+  for (int f=1; f<argc; f++)
   {
     const string& filename = string(argv[f]);
     TFile* mafile = TFile::Open(filename.c_str(),"READ");
@@ -138,6 +101,9 @@ int main(int argc, char** argv)
     T->SetBranchAddress("energy",&energy);
     T->SetBranchAddress("posr",&radius);
 
+
+    bool cut1_clean;
+    bool cut2_clean;
     for (int entry=0; entry < T->GetEntries(); entry++)
     {
       T->GetEntry(entry);
@@ -153,46 +119,42 @@ int main(int argc, char** argv)
       if(trigWord & path_trigmask) //skip entry if trigger has an Esum trigger
         continue;
 
-      if(!DCsonly && !Fitsonly){ //We're using a DC branch and a fit branch
+      if(!dcs_only && !fits_only){ //We're using a DC branch and a fit branch
+        //Next, see if the event is clean accoding to the defined DC branch 
+        if(~(dcFlagged) & cut1_DCmask) //is dirty if dcFlagged has any cut_DCmask bits
+          cut1_clean = 0;
+        if((trigWord) & cut1_trigmask) //is dirty if it has the OwlEHi bit
+          cut1_clean = 0;
         //Label the event dirty if it fails
-        if(B14only){
-          if((beta14 < b14_low) | (b14_high < beta14))
-            cut2_clean = 0;
-        }
-        else if(ITRonly){
-          if(ITR < itr_low)
-            cut2_clean = 0;
-        }
-        else {
-          if((beta14 < b14_low) | (b14_high < beta14))
-            cut2_clean = 0;
-          if(ITR < itr_low)
-            cut2_clean = 0;
-        }
-
-        //Next, see if the event is clean accoding to the defined DC branch 
-        if(~(dcFlagged) & cut_DCmask) //is dirty if dcFlagged has any cut_DCmask bits
-          cut1_clean = 0;
-        //FIXME: Need a clean way to choose whether or not to use OwlEHi also
-//        if((trigWord) & DC_trigmask) //is dirty if it has the OwlEHi bit
-//          cut1_clean = 0;
-      }
-
-      else if(DCsonly){   //We're only using the DC cuts
-        //Next, see if the event is clean accoding to the defined DC branch 
-        if(~(dcFlagged) & cut_DC1) 
-          cut1_clean = 0;
-        if(~(dcFlagged) & cut_DC2) 
+        if((beta14 < cut2_b14_low) | (cut2_b14_high < beta14))
+          cut2_clean = 0;
+        if(ITR < cut2_itr_low)
           cut2_clean = 0;
       }
-
-     else if(Fitsonly)
-     {
-       if((beta14 < b14_low) | (b14_high < beta14))
-         cut1_clean = 0;
-       if(ITR < itr_low)
-         cut2_clean = 0;
+      else if(dcs_only){   //We're only using the DC cuts
+        //Next, see if the event is clean accoding to the defined DC branch 
+        if(~(dcFlagged) & cut1_DCmask) 
+          cut1_clean = 0;
+        if((trigWord) & cut1_trigmask) //is dirty if it has the OwlEHi bit
+          cut1_clean = 0;
+       if(~(dcFlagged) & cut2_DCmask) 
+          cut2_clean = 0;
+       if((trigWord) & cut2_trigmask) //is dirty if it has the OwlEHi bit
+          cut1_clean = 0;
      }
+
+     else if(fits_only)
+     {
+       if((beta14 < cut1_b14_low) | (cut1_b14_high < beta14))
+         cut1_clean = 0;
+       if(ITR < cut1_itr_low)
+         cut1_clean = 0;
+
+       if((beta14 < cut2_b14_low) | (cut2_b14_high < beta14))
+         cut2_clean = 0;
+       if(ITR < cut2_itr_low)
+         cut2_clean = 0;
+    }
     //Finally, increment the a,b,c,d values according to classification
       if (cut1_clean & cut2_clean)
         a++;
@@ -210,13 +172,6 @@ int main(int argc, char** argv)
     delete mafile;
   } //End ntuple file loop
 
-  cout << "Used DC branch and Fit branch?" << (!DCsonly & !Fitsonly) << endl;
-  if(!DCsonly)
-    cout << "Data cleaning mask used in DC branch: " << cut_DCmask << endl;
-  else
-    cout << "Data cleaning masks used: " << cut_DC1 << ":" << cut_DC2 << endl;
-  cout << "Used ITR only?" << ITRonly << endl;
-  cout << "Used B14 only?" << B14only << endl;
   cout << "a: " << a << endl;
   cout << "b: " << b << endl;
   cout << "c: " << c << endl;
