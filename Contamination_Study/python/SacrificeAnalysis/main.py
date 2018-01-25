@@ -23,39 +23,45 @@ import glob
 
 MAINDIR = os.path.dirname(__file__)
 DBDIR = os.path.abspath(os.path.join(MAINDIR, "DB"))
-DCDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_DCsacs", "4_9_MeV"))
-FITDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_Fitsacs","4_9_MeV"))
+SACDIR = os.path.abspath(os.path.join(MAINDIR, "sacrifice_rootfiles", BLEH)
+#DCDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_DCsacs", "4_9_MeV"))
+#FITDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_Fitsacs","4_9_MeV"))
 
 ######### VARIABLES ########
 branch = "DC"   #Either DC or Fit
-SACDIR = DCDIR  #Choose if you're looking at the sacrifice for the fits or DC branch
 db_entry = "N16_Positions_1.json"    #Point to which N16 run info you want
 pcolor = 'b'
+#FIXME: implement this!
+date = "05/25/2017"  #Input a date to only look at those files. Type as None otherwise
 ######## /VARIABLES #######
 
 def plot_sacrificevsZ(calib_run_dict, sacrifice_filenames, branch):
     #Given a calibration run dictionary and the corresponding roots
     #output from either DC_Sacrifice or Beta14ITR_Sacrifice, plot
     #the physics sacrifice as a function of the z position of the source.
-    z_positions = []
+    positions = []
+    source = None
     fractional_sac = []
     fractional_sac_unc = []
-    for run in calib_run_dict["Runs"]:
+    for run in calib_run_dict:
         for filename in sacrifice_filenames:
             if run in filename:
                 print(run)
+                if source is None:
+                    source = calib_run_dict[run]["source"]
+                elif source != calib_run_dict[run]["source"]:
+                    print("WARNING: not all sources are of the same...")
                 #Found the filename corresponding to run in meta
-                zposition = calib_run_dict["Runs"][run][2]
-                z_positions.append(zposition)
+                position = calib_run_dict[run]["position"]
+                z_positions.append(position[2])
 
                 #Now we get this run's sacrifice information
                 _file0 = ROOT.TFile.Open(filename,"READ")
+                h_all = copy.deepcopy(_file0.Get("h_AllEvents"))
                 if branch == "DC":
-                    h_all = copy.deepcopy(_file0.Get("h_AllEvents"))
-                    h_flagged = copy.deepcopy(_file0.Get("h_FlaggedEvents"))
+                    h_flagged = copy.deepcopy(_file0.Get("h_DC_FlaggedEvents"))
                 elif branch == "Fit":
-                    h_all = copy.deepcopy(_file0.Get("h_fit_E"))
-                    h_flagged = copy.deepcopy(_file0.Get("h_fit_fail_E"))
+                    h_flagged = copy.deepcopy(_file0.Get("h_BI_FlaggedEvents"))
                 numall = float(h_all.GetEntries())
                 numflagged= float(h_flagged.GetEntries())
                 fractional_sac.append( numflagged / numall)
@@ -68,12 +74,11 @@ def plot_sacrificevsZ(calib_run_dict, sacrifice_filenames, branch):
     ax.errorbar(z_positions,fractional_sac, xerr=0, yerr=fractional_sac_unc, \
             marker='o', linestyle='none', color = pcolor, alpha=0.6, \
             label = 'Fractional Sacrifice')
-    ax.set_xlabel(calib_run_dict["Source"] + " Z Position (m)")
+    ax.set_xlabel(str(source) + " Z Position (m)")
     ax.set_ylabel("Fraction of events sacrificed")
     ax.set_title("Fractional sacrifice due to " + branch + " as source" + \
             " Z position varies\n" + \
-            "Calibration on " + calib_run_dict["Date"] + ", " + \
-            calib_run_dict["Source"] + " Source used")
+            str(source) + " Source used")
     ax.grid(True)
     plt.show()
     return z_positions, fractional_sac, fractional_sac_unc

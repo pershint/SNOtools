@@ -18,7 +18,10 @@
 #include <string>
 #include <map>
 #include <iterator>
+
+#include "ConfigParser.hh"
 using namespace std;
+using namespace configuration;
 
 int main(int argc, char** argv)
 {
@@ -73,19 +76,25 @@ int main(int argc, char** argv)
   //some cut selections you could apply
   //To build this mask, see snopl.us/docs/rat/user_manual/html/node226.html
   //int prescaleonly
-  bool plotClean = true;
-  bool plotDirty = true;
+  //FIXME: don't want the location hard-coded here
+  configuration::CoParser configparse("../config/cuts_default.ini")
+  try{
+    bool plotClean = configparse.getValueOfKey<bool>("plotClean");
+    bool plotDirty = configparse.getValueOfKey<bool>("plotDirty");
 
-  //Define cuts here
-  int path_DCmask = 0b1110000011100010;  //Pathological cuts for contamination study 
-  int path_trigmask = 0b1010001100000;  //ESum, PGD, and PED triggers
-  double E_low = 5.5;   //MeV
-  double E_high = 9.0;  //MeV
-  double r_cut = 5500;  //mm
-  double b14_low = -0.12;
-  double b14_high = 0.95;
-  double itr_low = 0.55;
-
+    //Define cuts here
+    int path_DCmask = configparse.getValueOfKey<int>("path_DCmask");
+    int path_trigmask = configparse.getValueOfKey<int>("path_trigmask");
+    double E_low = configparse.getValueOfKey<double>("E_low");
+    double E_high = configparse.getValueOfKey<double>("E_high");
+    double r_cut = configparse.getValueOfKey<double>("r_cut");
+    double b14_low = configparse.getValueOfKey<double>("b14_low");
+    double b14_high = configparse.getValueOfKey<double>("b14_high");
+    double itr_low = configparse.getValueOfKey<double>("itr_low");
+  } catch {
+    std::cout << "ERROR READING FROM CONFIG FILE." << std::endl;
+    return 1;
+  }
 
   TFile* mafile = TFile::Open(infile.c_str(),"READ");
   //Get the tree that has the entries

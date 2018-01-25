@@ -60,27 +60,34 @@ int main(int argc, char** argv)
   TApplication* myapp = new TApplication("myapp",0,0);
 
   TCanvas* c1 = new TCanvas("c1","c1",800,1200);
-  TH1D* h_FlaggedEvents = new TH1D("h_FlaggedEvents", "h_FlaggedEvents", 28,5.5,11.5);
-  TH1D* h_AllEvents = new TH1D("h_AllEvents", "h_AllEvents", 28,5.5,11.5);
-  TH1D* h_FracFlagged = new TH1D("h_FracFlagged", "h_FracFlagged", 28,5.5,11.5);
-  h_AllEvents->Sumw2();
-  h_FracFlagged->Sumw2();
-  h_FlaggedEvents->Sumw2();
+  TH1D* h_DC_FlaggedEvents = new TH1D("h_DC_FlaggedEvents", "h_DC_FlaggedEvents", 28,5.5,11.5);
+  TH1D* h_DC_AllEvents = new TH1D("h_DC_AllEvents", "h_DC_AllEvents", 28,5.5,11.5);
+  TH1D* h_DC_FracFlagged = new TH1D("h_DC_FracFlagged", "h_DC_FracFlagged", 28,5.5,11.5);
+  TH1D* h_BI_AllEvents = new TH1D("h_BI_AllEvents", "h_B14ITR", 50,0.,1.,50,-0.5,2.);
+  TH1D* h_BI_FlaggedEvents = new TH1D("h_BI_FlaggedEvents", "h_B14ITR", 50,0.,1.,50,-0.5,2.);
+  TH1D* h_BI_FracFlagged = new TH1D("h_BI_FracFlagged", "h_BI_FracFlagged", 50,0.,1.,50,-0.5,2.);
+  h_DC_AllEvents->Sumw2();
+  h_DC_FracFlagged->Sumw2();
+  h_DC_FlaggedEvents->Sumw2();
   //const char* outfile = outname;
 
 
   //some cut selections you could apply
   //To build this mask, see snopl.us/docs/rat/user_manual/html/node226.html
   //int prescaleonly
-  int path_DCmask = 0b1110000011100010;  //Pathological cuts for contamination study
-  int cut_DCmask = 0b1111100011100;  //DC branch of contamination study
- 
-  double E_low = 5.5;   //MeV
-  double E_high = 9.0;  //MeV
-  double r_cut = 5500;  //mm
-
-  int path_trigmask = 0b1010001100000;  //ESum, PGD, and PED triggers
-  int cut_trigmask = 0b1000000000; //OwlEHi trigger bit
+  configuration::CoParser configparse("../config/cuts_default.ini")
+  try{
+    int path_DC_DCmask = configparse.getValueOfKey<int>("path_DC_DCmask");
+    int path_DC_trigmask = configparse.getValueOfKey<int>("path_DC_trigmask");
+    int cut_DCmask = configparse.getValueOfKey<int>("cut_DCmask");
+    int cut_trigmask = configparse.getValueOfKey<int>("cut_trigmask");
+    double E_low = configparse.getValueOfKey<double>("E_low");
+    double E_high = configparse.getValueOfKey<double>("E_high");
+    double r_cut = configparse.getValueOfKey<double>("r_cut");
+  } catch {
+    std::cout << "ERROR READING FROM CONFIG FILE." << std::endl;
+    return 1;
+  }
 
   //open the file now
   //const string& filename = infile;
@@ -116,16 +123,16 @@ int main(int argc, char** argv)
       continue;
     //if (!(dcApplied))   //Check you actually have data cleaning run on file
     //  continue;
-    if (~(dcFlagged) & path_DCmask)   //true if a pathological bit is in dcFlagged
+    if (~(dcFlagged) & path_DC_DCmask)   //true if a pathological bit is in dcFlagged
       continue;
-    if (triggerWord & path_trigmask)  //true if a pathological bit is in triggerWord
+    if (triggerWord & path_DC_trigmask)  //true if a pathological bit is in triggerWord
       continue;
 
     //Now, fill our histogram with all events passing pathological cuts
-    h_AllEvents->Fill(energy);
+    h_DC_AllEvents->Fill(energy);
     if ((~(dcFlagged) & cut_DCmask) || (triggerWord & cut_trigmask)){
       //true if an event is dirty according to DC branch or has OwlEHi
-      h_FlaggedEvents->Fill(energy);
+      h_DC_FlaggedEvents->Fill(energy);
     }
   }
   delete T;
@@ -133,18 +140,18 @@ int main(int argc, char** argv)
   delete mafile;
   
 
-  h_FracFlagged->Divide(h_FlaggedEvents,h_AllEvents,1.,1.,"b");
+  h_DC_FracFlagged->Divide(h_DC_FlaggedEvents,h_DC_AllEvents,1.,1.,"b");
 
-  h_FlaggedEvents->GetXaxis()->SetTitle("Energy(Mev)");
-  h_FlaggedEvents->GetYaxis()->SetTitle("Events");
+  h_DC_FlaggedEvents->GetXaxis()->SetTitle("Energy(Mev)");
+  h_DC_FlaggedEvents->GetYaxis()->SetTitle("Events");
 
-  h_FracFlagged->GetXaxis()->SetTitle("Energy(MeV)");
-  h_FracFlagged->GetYaxis()->SetTitle("Events");
+  h_DC_FracFlagged->GetXaxis()->SetTitle("Energy(MeV)");
+  h_DC_FracFlagged->GetYaxis()->SetTitle("Events");
 
   TFile* thehists = new TFile(outname.c_str(), "CREATE");
-  thehists->Add(h_FlaggedEvents);
-  thehists->Add(h_AllEvents);
-  thehists->Add(h_FracFlagged);
+  thehists->Add(h_DC_FlaggedEvents);
+  thehists->Add(h_DC_AllEvents);
+  thehists->Add(h_DC_FracFlagged);
   thehists->Write();
   thehists->Close();
 } //End main

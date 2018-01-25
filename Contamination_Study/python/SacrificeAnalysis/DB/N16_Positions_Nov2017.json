@@ -1,0 +1,20 @@
+{
+    "10XXXX": {
+        "date": "11/13/2017",
+        "source" "n16",
+        "runnum": 105893,
+        "position": [0,0,0]
+    },
+    "10XXXX": {
+        "date": "10/13/2017",
+        "source" "n16",
+        "runnum": 105896,
+        "position": [0,0,-4.02]
+    },
+    "10XXXX": {
+        "date": "10/13/2017",
+        "source" "n16",
+        "runnum": 105898,
+        "position": [0,0,4.0]
+    }
+}
