@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
+#include <fstream>
 #include <typeinfo>
 #include <string>
 #include <map>
@@ -12,6 +14,14 @@
 
 using namespace std;
 using namespace configuration;
+
+
+void write_to_out_file( const std::string &text )
+{
+    std::ofstream out_file(
+        "BifurResults.out", std::ios_base::out | std::ios_base::app );
+    out_file << text << std::endl;
+}
 
 int main(int argc, char** argv)
 {
@@ -171,7 +181,15 @@ int main(int argc, char** argv)
     mafile->Close();
     delete mafile;
   } //End ntuple file loop
-
+  configuration::converter convert;
+  std::string aresult = "a=" + convert.T_to_string(a);
+  std::string bresult = "b=" + convert.T_to_string(b);
+  std::string cresult = "c=" + convert.T_to_string(c);
+  std::string dresult = "d=" + convert.T_to_string(d);
+  write_to_out_file(aresult);
+  write_to_out_file(bresult);
+  write_to_out_file(cresult);
+  write_to_out_file(dresult);
   cout << "a: " << a << endl;
   cout << "b: " << b << endl;
   cout << "c: " << c << endl;
