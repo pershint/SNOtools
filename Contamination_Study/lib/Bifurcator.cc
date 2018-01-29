@@ -85,11 +85,14 @@ int main(int argc, char** argv)
   int b = 0;  //Passes cut 1 but fails cut 2
   int c = 0;  //Passes cut 2 but fails cut 1
   int d = 0;  //Fails cut branches 1 and 2
-
+  std::string outinit = "Files used: ";
+  write_to_out_file(outinit);
   //For each ntuple, we'll check if events pass or fail each bifurcation branch cut
   for (int f=1; f<argc; f++)
   {
     const string& filename = string(argv[f]);
+    std::string outwrite = string(argv[f]) + " ";
+    write_to_out_file(outwrite);
     TFile* mafile = TFile::Open(filename.c_str(),"READ");
     //Get the tree that has the entries
     TTree* T = (TTree*) mafile->Get("output");
@@ -182,6 +185,8 @@ int main(int argc, char** argv)
     delete mafile;
   } //End ntuple file loop
   configuration::converter convert;
+  std::string space = "\n\n\n";
+  write_to_out_file(space);
   std::string aresult = "a=" + convert.T_to_string(a);
   std::string bresult = "b=" + convert.T_to_string(b);
   std::string cresult = "c=" + convert.T_to_string(c);
