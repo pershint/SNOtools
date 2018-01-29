@@ -16,8 +16,8 @@ def GetResultDict(filename):
     for line in f:
         #Get the pass-fail values
         for box in boxes:
-            if box+":" in line:
-                value = line.split(":")
+            if box+"=" in line:
+                value = line.split("=")
                 result_dict[box] = float(value[1].rstrip("\n"))
         if "Used DC branch and Fit" in line:
             value = line.split("?")
