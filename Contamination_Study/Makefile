@@ -1,6 +1,7 @@
 ROOT_CONFIG := $(shell root-config --cflags)
 ROOT_LIBS := $(shell root-config --libs)
 COPARSER := ConfigParser.cc
+ERROR := Exceptions.cc
 SACPROGRAM := Sacrifice.cc
 BIFURPROGRAM := Bifurcator.cc
 SACOUT := Sacrifice

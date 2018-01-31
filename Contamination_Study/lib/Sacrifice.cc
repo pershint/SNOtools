@@ -77,28 +77,23 @@ int main(int argc, char** argv)
   //some cut selections you could apply
   //To build this mask, see snopl.us/docs/rat/user_manual/html/node226.html
   //int prescaleonly
-  configuration::CoParser configparse("../config/cuts_default.ini");
   try{
-    int path_DC_DCmask = configparse.getValueOfKey<int>("path_DC_DCmask");
-    int path_DC_trigmask = configparse.getValueOfKey<int>("path_DC_trigmask");
-    int cut_DCmask = configparse.getValueOfKey<int>("cut1_DCmask");
-    int cut_trigmask = configparse.getValueOfKey<int>("cut1_trigmask");
-    double E_low = configparse.getValueOfKey<double>("E_low");
-    double E_high = configparse.getValueOfKey<double>("E_high");
-    double r_cut = configparse.getValueOfKey<double>("r_cut");
-    double b14_low = configparse.getValueOfKey<double>("cut2_b14_low");
-    double b14_high = configparse.getValueOfKey<double>("cut2_b14_high");
-    double itr_low = configparse.getValueOfKey<double>("cut2_itr_low");
+    configuration::CoParser configparse("../config/cuts_default.ini");
+    path_DC_DCmask = configparse.getValueOfKey<int>("path_DC_DCmask");
+    path_DC_trigmask = configparse.getValueOfKey<int>("path_DC_trigmask");
+    cut_DCmask = configparse.getValueOfKey<int>("cut1_DCmask");
+    cut_trigmask = configparse.getValueOfKey<int>("cut1_trigmask");
+    E_low = configparse.getValueOfKey<double>("E_low");
+    E_high = configparse.getValueOfKey<double>("E_high");
+    r_cut = configparse.getValueOfKey<double>("r_cut");
+    b14_low = configparse.getValueOfKey<double>("cut2_b14_low");
+    b14_high = configparse.getValueOfKey<double>("cut2_b14_high");
+    itr_low = configparse.getValueOfKey<double>("cut2_itr_low");
 
-  }  catch (int e) {
+  }  catch (std::exception& e) {
     std::cout << "ERROR READING FROM CONFIG FILE." << std::endl;
-    return 1;
+    return EXIT_FAILURE;
   };
-
-  cout << "E_LOW: " << E_low << endl;
-  cout << "DC_CUT INTEGER: " << cut_DCmask << endl;
-  cout << "TRIG MASK INTEGER: " << cut_trigmask << endl;
-
   //I don't even use these; it crashed on my cluster without them
   // Define our histograms
   //Define histograms to fill in

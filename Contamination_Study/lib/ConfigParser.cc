@@ -3,6 +3,9 @@
 //
 //
 #include "ConfigParser.hh"
+#include "Exceptions.hh"
+#include <exception>
+#include <stdexcept>
 
 namespace configuration {
 
@@ -17,8 +20,10 @@ namespace configuration {
   {
     std::ifstream file;
     file.open(fName.c_str());
-    if (!file)
-      exitWithError("CFG: file" + fName + "cannot be found...\n");
+    if (!file) {
+      std::cout << "CFG: file " << fName << " cannot be found...\n" << std::endl;
+      throw(std::exception());
+    }
     std::string line;
     size_t lineNo=0;
     while (std::getline(file,line))
@@ -63,11 +68,15 @@ namespace configuration {
   {
     converter convert;
     if (line.find('=') == line.npos){
-      exitWithError("CFG: Couldn't find the separator on line: " +
-          convert.T_to_string(lineNo) + "\n");
+      std::cout << "CFG: Couldn't find the separator on line: " <<
+        convert.T_to_string(lineNo) << "\n" << std::endl;
+      throw(the_ex);
     }
-    if (!(validLine(line)))
-        exitWithError("CFG: Bad format for line: " + convert.T_to_string(lineNo) +"\n");
+    if (!(validLine(line))){
+      std::cout << "CFG: Bad format for line: " << convert.T_to_string(lineNo) 
+          << "\n" << std::endl;
+      throw(the_ex);
+    }
     extractContents(line);
   }
 
@@ -82,8 +91,10 @@ namespace configuration {
     extractValue(value, sepPos, temp);
     if (!keyExists(key))
         contents.insert(std::pair<std::string, std::string>(key,value));
-    else
-        exitWithError("CFG: Adding a key that already exists!  Aborting...\n");
+    else{
+      std::cout << "CFG: Adding a key that already exists!  Aborting...\n"<<std::endl;
+      throw(the_ex);
+    }
   }
 
   void CoParser::extractKey(std::string &key, size_t const &sepPos, const std::string &line) const
@@ -103,15 +114,6 @@ namespace configuration {
   bool CoParser::keyExists(const std::string &key) const
   {
     return contents.find(key) != contents.end();
-  }
-
-  void CoParser::exitWithError(std::basic_string<char> error)
-  {
-    std::cout << error << std::endl;
-    std::cin.ignore();
-    std::cin.get();
-
-    exit(EXIT_FAILURE);
   }
 
 } //Namespace configuration
