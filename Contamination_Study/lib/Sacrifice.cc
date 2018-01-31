@@ -81,19 +81,23 @@ int main(int argc, char** argv)
   try{
     int path_DC_DCmask = configparse.getValueOfKey<int>("path_DC_DCmask");
     int path_DC_trigmask = configparse.getValueOfKey<int>("path_DC_trigmask");
-    int cut_DCmask = configparse.getValueOfKey<int>("cut_DCmask");
-    int cut_trigmask = configparse.getValueOfKey<int>("cut_trigmask");
+    int cut_DCmask = configparse.getValueOfKey<int>("cut1_DCmask");
+    int cut_trigmask = configparse.getValueOfKey<int>("cut1_trigmask");
     double E_low = configparse.getValueOfKey<double>("E_low");
     double E_high = configparse.getValueOfKey<double>("E_high");
     double r_cut = configparse.getValueOfKey<double>("r_cut");
-    double b14_low = configparse.getValueOfKey<double>("b14_low");
-    double b14_high = configparse.getValueOfKey<double>("b14_high");
-    double itr_low = configparse.getValueOfKey<double>("itr_low");
+    double b14_low = configparse.getValueOfKey<double>("cut2_b14_low");
+    double b14_high = configparse.getValueOfKey<double>("cut2_b14_high");
+    double itr_low = configparse.getValueOfKey<double>("cut2_itr_low");
 
   }  catch (int e) {
     std::cout << "ERROR READING FROM CONFIG FILE." << std::endl;
     return 1;
   };
+
+  cout << "E_LOW: " << E_low << endl;
+  cout << "DC_CUT INTEGER: " << cut_DCmask << endl;
+  cout << "TRIG MASK INTEGER: " << cut_trigmask << endl;
 
   //I don't even use these; it crashed on my cluster without them
   // Define our histograms
@@ -101,7 +105,7 @@ int main(int argc, char** argv)
   TApplication* myapp = new TApplication("myapp",0,0);
 
   TCanvas* c1 = new TCanvas("c1","c1",800,1200);
-  TH1D* h_DC_FlaggedEvents = new TH1D("h_DC_FlaggedEvents", "h_DC_FlaggedEvents", 28,E_low,11.5);
+  TH1D* h_DC_FlaggedEvents = new TH1D("h_DC_FlaggedEvents", "h_DC_FlaggedEvents", 50,E_low,11.5);
   TH1D* h_AllEvents = new TH1D("h_AllEvents", "h_AllEvents", 50,E_low,11.5);
   TH1D* h_DC_FracFlagged = new TH1D("h_DC_FracFlagged", "h_DC_FracFlagged", 50,E_low,11.5);
   TH1D* h_BI_FlaggedEvents = new TH1D("h_BI_FlaggedEvents", "h_BI_FlaggedEvents", 50,E_low,11.5);
@@ -183,13 +187,13 @@ int main(int argc, char** argv)
   h_DC_FlaggedEvents->GetYaxis()->SetTitle("Events");
 
   h_DC_FracFlagged->GetXaxis()->SetTitle("Energy(MeV)");
-  h_DC_FracFlagged->GetYaxis()->SetTitle("Events");
+  h_DC_FracFlagged->GetYaxis()->SetTitle("Fractional Sacrifice");
 
   h_BI_FlaggedEvents->GetXaxis()->SetTitle("Energy(Mev)");
   h_BI_FlaggedEvents->GetYaxis()->SetTitle("Events");
 
   h_BI_FracFlagged->GetXaxis()->SetTitle("Energy(MeV)");
-  h_BI_FracFlagged->GetYaxis()->SetTitle("Events");
+  h_BI_FracFlagged->GetYaxis()->SetTitle("Fractional Sacrifice");
 
   TFile* thehists = new TFile(outname.c_str(), "CREATE");
   thehists->Add(h_BI_FlaggedEvents);
