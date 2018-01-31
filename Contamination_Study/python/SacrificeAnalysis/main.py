@@ -23,17 +23,25 @@ import glob
 
 MAINDIR = os.path.dirname(__file__)
 DBDIR = os.path.abspath(os.path.join(MAINDIR, "DB"))
-SACDIR = os.path.abspath(os.path.join(MAINDIR, "sacrifice_rootfiles", BLEH)
+SACDIR = os.path.abspath(os.path.join(MAINDIR, "sacrifice_rootfiles", "old", "may2016_N16"))
 #DCDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_DCsacs", "4_9_MeV"))
 #FITDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_Fitsacs","4_9_MeV"))
 
 ######### VARIABLES ########
-branch = "DC"   #Either DC or Fit
+branch = "Fit"   #Either DC or Fit
 db_entry = "N16_Positions_1.json"    #Point to which N16 run info you want
 pcolor = 'b'
 #FIXME: implement this!
 date = "05/25/2017"  #Input a date to only look at those files. Type as None otherwise
 ######## /VARIABLES #######
+
+def GetDate(rundict, date):
+    #Returns the run entries associated with only a specific date
+    datedict = {}
+    for run in rundict:
+        if rundict[run]["date"] == str(date):
+            datedict[run] = rundict[run]
+    return datedict
 
 def plot_sacrificevsZ(calib_run_dict, sacrifice_filenames, branch):
     #Given a calibration run dictionary and the corresponding roots
@@ -53,7 +61,7 @@ def plot_sacrificevsZ(calib_run_dict, sacrifice_filenames, branch):
                     print("WARNING: not all sources are of the same...")
                 #Found the filename corresponding to run in meta
                 position = calib_run_dict[run]["position"]
-                z_positions.append(position[2])
+                positions.append(position)
 
                 #Now we get this run's sacrifice information
                 _file0 = ROOT.TFile.Open(filename,"READ")
@@ -67,6 +75,9 @@ def plot_sacrificevsZ(calib_run_dict, sacrifice_filenames, branch):
                 fractional_sac.append( numflagged / numall)
                 fractional_sac_unc.append( np.sqrt((numflagged / (numall**2))+\
                         ((numflagged*np.sqrt(numall))/(numall**2))**2))
+    z_positions = []
+    for position in positions:
+        z_positions.append(position[2])
     #We've got our position and sacrifice information for this calibration set.
     #Now, just plot it.
     fig = plt.figure()
@@ -101,9 +112,9 @@ if __name__ == '__main__':
     #Now, get our calibration dictionary.
     with open(DBDIR + "/"+db_entry,"r") as f:
         calib_dict = json.load(f)
-
+    plot_dict = GetDate(calib_dict, "05/25/2017")
     #Try the plotting out
-    z_pos, fs, fs_unc = plot_sacrificevsZ(calib_dict, filenames, branch)
+    z_pos, fs, fs_unc = plot_sacrificevsZ(plot_dict, filenames, branch)
     z_pos = np.array(z_pos)
     fs = np.array(fs)
     fs_unc = np.array(fs_unc)
@@ -112,9 +123,3 @@ if __name__ == '__main__':
     Frac_stdev = np.std(fs)
     print("AVERAGE FRAC. SACRIFICE: " + str(Frac_average))
     print("STDEV OF FRAC. SACRIFICE: " + str(Frac_stdev))
-
-    #Try a weighted average.  Weigh each fs term based on the uncertainties
-    weights = 1. / (fs_unc**2)
-    weight_av, weight_std = weighted_avg_and_std(fs, weights)
-    print("WEIGHTED AVG. FRAC. SACRIFICE: " + str(weight_av))
-    print("WEIGHTED STD. OF AVG: " + str(weight_std))
