@@ -48,33 +48,33 @@ int main(int argc, char** argv)
   //int prescaleonly
   configuration::CoParser configparse("../config/cuts_default.ini");
   try{
-    bool dcs_only = configparse.getValueOfKey<bool>("dcs_only");
-    bool fits_only = configparse.getValueOfKey<bool>("fits_only");
+    dcs_only = configparse.getValueOfKey<bool>("dcs_only");
+    fits_only = configparse.getValueOfKey<bool>("fits_only");
     if (dcs_only && fits_only){
       cout << "You can't use DCs only AND fits only. Choose both false or one true"
           << endl;
       exit(EXIT_FAILURE);
     }
     
-    int path_DCmask = configparse.getValueOfKey<int>("path_DCmask");
-    int path_trigmask = configparse.getValueOfKey<int>("path_trigmask");
-    double cut2_b14_low = configparse.getValueOfKey<double>("cut2_b14_low");
-    double cut2_b14_high = configparse.getValueOfKey<double>("cut2_b14_high");
-    double cut2_itr_low = configparse.getValueOfKey<double>("cut2_itr_low");
-    int cut1_DCmask = configparse.getValueOfKey<int>("cut1_DCmask");
-    int cut1_trigmask = configparse.getValueOfKey<int>("cut1_trigmask");
+    path_DCmask = configparse.getValueOfKey<int>("path_DCmask");
+    path_trigmask = configparse.getValueOfKey<int>("path_trigmask");
+    cut2_b14_low = configparse.getValueOfKey<double>("cut2_b14_low");
+    cut2_b14_high = configparse.getValueOfKey<double>("cut2_b14_high");
+    cut2_itr_low = configparse.getValueOfKey<double>("cut2_itr_low");
+    cut1_DCmask = configparse.getValueOfKey<int>("cut1_DCmask");
+    cut1_trigmask = configparse.getValueOfKey<int>("cut1_trigmask");
     if (dcs_only){
-      int cut2_DCmask = configparse.getValueOfKey<int>("cut2_DCmask");
-      int cut2_trigmask = configparse.getValueOfKey<int>("cut2_trigmask");
+      cut2_DCmask = configparse.getValueOfKey<int>("cut2_DCmask");
+      cut2_trigmask = configparse.getValueOfKey<int>("cut2_trigmask");
     }
     if (fits_only){
-      double cut1_b14_low = configparse.getValueOfKey<double>("cut1_b14_low");
-      double cut1_b14_high = configparse.getValueOfKey<double>("cut1_b14_high");
-      double cut1_itr_low = configparse.getValueOfKey<double>("cut1_itr_low");
+      cut1_b14_low = configparse.getValueOfKey<double>("cut1_b14_low");
+      cut1_b14_high = configparse.getValueOfKey<double>("cut1_b14_high");
+      cut1_itr_low = configparse.getValueOfKey<double>("cut1_itr_low");
     }
-    double E_low = configparse.getValueOfKey<double>("E_low");
-    double E_high = configparse.getValueOfKey<double>("E_high");
-    double r_cut = configparse.getValueOfKey<double>("r_cut");
+    E_low = configparse.getValueOfKey<double>("E_low");
+    E_high = configparse.getValueOfKey<double>("E_high");
+    r_cut = configparse.getValueOfKey<double>("r_cut");
 
   }  catch (int e) {
     std::cout << "ERROR READING FROM CONFIG FILE." << std::endl;
