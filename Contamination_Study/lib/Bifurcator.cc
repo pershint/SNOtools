@@ -41,15 +41,15 @@ int main(int argc, char** argv)
   double cut2_b14_low;
   double cut2_b14_high;
   double cut2_itr_low;
-  bool dcs_only;
-  bool fits_only;
+  int dcs_only;
+  int fits_only;
   //some cut selections you could apply
   //To build this mask, see snopl.us/docs/rat/user_manual/html/node226.html
   //int prescaleonly
   configuration::CoParser configparse("../config/cuts_default.ini");
   try{
-    dcs_only = configparse.getValueOfKey<bool>("dcs_only");
-    fits_only = configparse.getValueOfKey<bool>("fits_only");
+    dcs_only = configparse.getValueOfKey<int>("dcs_only");
+    fits_only = configparse.getValueOfKey<int>("fits_only");
     if (dcs_only && fits_only){
       cout << "You can't use DCs only AND fits only. Choose both false or one true"
           << endl;
