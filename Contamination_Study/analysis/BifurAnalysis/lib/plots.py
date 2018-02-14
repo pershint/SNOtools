@@ -104,6 +104,7 @@ def Contamination_Minimum(BifurAnalysis):
 
     #Plot the heatmap showing where the y_dc and y_fit minima are
     Z = BifurAnalysis(X,Y)
+    print("MINIMUM VALUE FOR Y_DC AND Y_FIT BASED ON LEAST SQUARES OF NUISANCE PARAMETER\n")
     im = plt.imshow(Z, aspect='auto', origin='lower',extent=extend_range)
     plt.colorbar()
     plt.xlabel("Data Cleaning Cut Leakage Fraction")
@@ -115,6 +116,7 @@ def Contamination_Minimum(BifurAnalysis):
 def LeakageUncertainty_Bootstrap_Plot(BifurAnalysis):
     y_dc_spread = BifurAnalysis.y_dc_bootstrap_unc(1000000)
     y_fit_spread = BifurAnalysis.y_fit_bootstrap_unc(1000000)
+    y1y2b_spread = BifurAnalysis.y1y2beta_bootstrap_unc(0.90,1000000)
     plt.hist(y_dc_spread, 100, facecolor='green', alpha=0.75)
     plt.title("Distribution of data cleaning cut branch fractional leakage")
     plt.xlabel("Y_DC")
@@ -123,5 +125,10 @@ def LeakageUncertainty_Bootstrap_Plot(BifurAnalysis):
     plt.hist(y_fit_spread, 200, facecolor='blue', alpha=0.75)
     plt.title("Distribution of fit classifier cut branch fractional leakage")
     plt.xlabel("Y_Fit")
+    plt.ylabel("Probability (arb. units)")
+    plt.show()
+    plt.hist(y1y2b_spread, 200, facecolor='red', alpha=0.75)
+    plt.title("Distribution of total estimated contamination")
+    plt.xlabel("Y_Fit*Y_DC*beta")
     plt.ylabel("Probability (arb. units)")
     plt.show()

@@ -2,7 +2,7 @@
 #Each bifurcation analysis result run.  Can also take in bifurcation analysis
 #Class results and plot a fancy grid showing the relative correlations of each.
 
-
+import argparse
 import numpy as np
 import sys, os
 import glob
@@ -15,14 +15,28 @@ import lib.plots as plots
 import matplotlib.pyplot as plt
 import numpy as np
 
-DEBUG = False
-
 MAINDIR = os.path.dirname(__file__)
-RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "..", "results", "OpenGolden_MayProcessed"))
+RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "..", "..","oldresults","results", "OpenGolden_MayProcessed"))
 ERANGE = "5p5_9_MeV"
-FILENAME = "/SingleCuts/*_results.out"
+FILENAME = "BA_5p5to9MeV_results.out"
 ACCDIR = os.path.abspath(os.path.join(MAINDIR,"DB","Acceptance_Rates"))
 
+parser = argparse.ArgumentParser(description='Parser to decide what analysis to do')
+parser.add_argument('--debug', dest='debug',action='store_true',
+        help='Run code in debug mode')
+parser.add_argument('--correlations', dest='CORRELATIONS',action='store_true',
+        help='Run the code that plots the correlations of different cuts/classifiers')
+parser.add_argument('--vsenergy', dest='CONTVSEN', action='store_true',
+        help='Plot the contamination as a function of energy for the energy windows analyzed')
+parser.set_defaults(CORRELATIONS=False,CONTVSEN=False,debug=False)
+args = parser.parse_args()
+
+CORRELATIONS = args.CORRELATIONS
+CONTVSEN = args.CONTVSEN
+DEBUG = args.debug
+
+print("CORRELATIONS BOOL: " + str(CORRELATIONS))
+print("CONTVSEN BOOL: " + str(CONTVSEN))
 
 if __name__ == '__main__':
     #Get the acceptance rate json entry you want
@@ -31,25 +45,24 @@ if __name__ == '__main__':
     #FIXME: Have some code that chooses the proper entry for the energy range
     acceptance_rates = acceptances["EnergyRanges"][0]
     #For fun, let's grab all the results
-    allresult_filenames = glob.glob(RESULTDIR+'/'+ERANGE+ FILENAME)
+    allresult_filenames = glob.glob(RESULTDIR+'/'+ERANGE+'/'+FILENAME)
     if DEBUG:
-        #Let's grab the list of files in the results directory
+        #Let's grab the first file in the results directory
         test_result = rg.GetResultDict(allresult_filenames[0])
+        print(test_result)
         BA = le.BifurAnalysisRun(test_result, acceptance_rates)
         print("y_dc:\n" + str(BA.y_dc()))
         print("y_fit:\n" + str(BA.y_fit()))
-        print("uncertainty on y_dc:\n" + str(BA.y_dc_unc()))
-        print("uncertainty on y_fit:\n" + str(BA.y_fit_unc()))
         print("Total events fed into B.A.: " + str(BA.total_events))
         print("Contamination assuming all events are background: ")
         print(BA.event_contamination())
-        print("Contamination uncertainty: " + str(BA.event_contamination_unc()))
-    
+        #Use the bootstrap method to find the 90% CL on y1y2beta
+        y1y2beta_distribution, Upper_90CL = BA.y1y2beta_bootstrap_unc(0.90,100000)
+        print("90% CL ON UPPER BOUND OF CONTAMINATION: " + str(Upper_90CL))
+   
         #Show the boxes and Num. events in each box
         plots.BoxDistribution(BA)
         
-        #Show the best fit y_dc and y_fit values given the bifurcation results
-        plots.Contamination_Minimum(BA)
     
         #Show the histograms for y_dc and y_fit uncertainties with boostrapping
         plots.LeakageUncertainty_Bootstrap_Plot(BA)
@@ -72,18 +85,18 @@ if __name__ == '__main__':
     CovMatrix.choleskydecompose()
     n = 94 #FIXME: have this filled with the number from the bifurcation
            #analysis result
-        cutmap = prob_dict.keys()
-        BoxMaker = ce.BA_Correlations(cutmap,cutmap[2:len(cutmap)],cutmap[0:2]) 
-        all_passfails = []
-        i = 0
-        while i < 500:
-            fired_variable_sets = CovMatrix.shoot_corrcuts(n)
-            #TODO: need a function that takes in the variables, the cut
-            #Labels, and gets the cut thresholds from RATDB. Checks if the
-            #Cut passes or fails.
-            #passfail_flags = check_passfail()
-            #BoxMaker.fillBABoxes(passfail_flags)
-            i+=1
+    cutmap = prob_dict.keys()
+    BoxMaker = ce.BA_Correlations(cutmap,cutmap[2:len(cutmap)],cutmap[0:2]) 
+    all_passfails = []
+    i = 0
+    while i < 500:
+        fired_variable_sets = CovMatrix.shoot_corrcuts(n)
+        #TODO: need a function that takes in the variables, the cut
+        #Labels, and gets the cut thresholds from RATDB. Checks if the
+        #Cut passes or fails.
+        #passfail_flags = check_passfail()
+        #BoxMaker.fillBABoxes(passfail_flags)
+        i+=1
            
     ######### END CORRELATIONS CODE #############
 
