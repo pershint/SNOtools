@@ -68,8 +68,6 @@ int main(int argc, char** argv)
   int path_DC_trigmask;
   int cut_DCmask;
   int cut_trigmask;
-  double E_low; 
-  double E_high;
   double r_cut;
   double b14_low;
   double b14_high;
@@ -83,8 +81,6 @@ int main(int argc, char** argv)
     path_DC_trigmask = configparse.getValueOfKey<int>("path_DC_trigmask");
     cut_DCmask = configparse.getValueOfKey<int>("cut1_DCmask");
     cut_trigmask = configparse.getValueOfKey<int>("cut1_trigmask");
-    E_low = configparse.getValueOfKey<double>("E_low");
-    E_high = configparse.getValueOfKey<double>("E_high");
     r_cut = configparse.getValueOfKey<double>("r_cut");
     b14_low = configparse.getValueOfKey<double>("cut2_b14_low");
     b14_high = configparse.getValueOfKey<double>("cut2_b14_high");
@@ -100,11 +96,11 @@ int main(int argc, char** argv)
   TApplication* myapp = new TApplication("myapp",0,0);
 
   TCanvas* c1 = new TCanvas("c1","c1",800,1200);
-  TH1D* h_DC_FlaggedEvents = new TH1D("h_DC_FlaggedEvents", "h_DC_FlaggedEvents", 50,E_low,11.5);
-  TH1D* h_AllEvents = new TH1D("h_AllEvents", "h_AllEvents", 50,E_low,11.5);
-  TH1D* h_DC_FracFlagged = new TH1D("h_DC_FracFlagged", "h_DC_FracFlagged", 50,E_low,11.5);
-  TH1D* h_BI_FlaggedEvents = new TH1D("h_BI_FlaggedEvents", "h_BI_FlaggedEvents", 50,E_low,11.5);
-  TH1D* h_BI_FracFlagged = new TH1D("h_BI_FracFlagged", "h_BI_FracFlagged", 50,E_low,11.5);
+  TH1D* h_DC_FlaggedEvents = new TH1D("h_DC_FlaggedEvents", "h_DC_FlaggedEvents", 58,0.0,11.6);
+  TH1D* h_AllEvents = new TH1D("h_AllEvents", "h_AllEvents", 58,0.0,11.6);
+  TH1D* h_DC_FracFlagged = new TH1D("h_DC_FracFlagged", "h_DC_FracFlagged", 58,0.0,11.6);
+  TH1D* h_BI_FlaggedEvents = new TH1D("h_BI_FlaggedEvents", "h_BI_FlaggedEvents", 58,0.0,11.6);
+  TH1D* h_BI_FracFlagged = new TH1D("h_BI_FracFlagged", "h_BI_FracFlagged", 58,0.0,11.6);
   h_AllEvents->Sumw2();
   h_DC_FracFlagged->Sumw2();
   h_DC_FlaggedEvents->Sumw2();
@@ -143,7 +139,7 @@ int main(int argc, char** argv)
   {
     T->GetEntry(entry);
     //First, we skip events defined as pathological
-    if((energy > E_high) || (energy < E_low) || (posr > r_cut))
+    if(posr > r_cut)
       continue;
     if(!fitValid)
       continue;
