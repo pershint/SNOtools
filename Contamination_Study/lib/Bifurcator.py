@@ -12,9 +12,13 @@ class Bifurcator(object):
         self.cdict = config_dict
         self.sacrifice_histograms = []
         self.save_directory = save_directory
+        if not os.path.exists(self.save_directory):
+            os.makedirs(self.save_directory)
         self.bifurcation_rootfile = None
 
     def set_savedirectory(self,directory):
+        if not os.path.exists(directory):
+            os.makedirs(self.save_directory)
         self.save_directory = directory
 
     def add_rootfile(self, rootfile):
@@ -90,16 +94,16 @@ class Bifurcator(object):
             datatree=rootfile.Get("output")
             for i in xrange(datatree.GetEntries()):
                 datatree.GetEntry(i)
-                if datatree.posr > self.cdict['posr']:
+                if datatree.posr > self.cdict['r_cut']:
                     continue
                 if datatree.fitValid is False:
                     continue
                 if datatree.energy > self.cdict['E_high'] or \
                         datatree.energy < self.cdict['E_low']:
                     continue
-                if ((~datatree.dcFlagged) & self.cdict["path_DC_DCmask"]) > 0:
+                if ((~datatree.dcFlagged) & self.cdict["path_DCmask"]) > 0:
                     continue
-                if ((datatree.triggerWord) & self.cdict["path_DC_trigmask"]) > 0:
+                if ((datatree.triggerWord) & self.cdict["path_trigmask"]) > 0:
                     continue
                 cut1_clean = True
                 cut2_clean = True
@@ -152,6 +156,3 @@ class Bifurcator(object):
         self.bifurcation_rootfile.Write()
         self.bifurcation_rootfile.Close()
 
-    def SaveConfiguration(self,config_outname):
-        saveconfigloc = self.save_directory+"/"+config_outname
-        json.dump(self.cdict, saveconfigloc, sort_keys=True,indent=4)

@@ -21,73 +21,83 @@ import json
 import ROOT
 import glob
 
-MAINDIR = os.path.dirname(__file__)
-CONFIGDIR = os.path.abspath(os.path.join(MAINDIR,"..","..","config"))
-DBDIR = os.path.abspath(os.path.join(MAINDIR, "DB"))
-SACDIR = os.path.abspath(os.path.join(MAINDIR, "sacrifice_rootfiles", "old", "may2016_N16"))
-#DCDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_DCsacs", "4_9_MeV"))
-#FITDIR = os.path.abspath(os.path.join(MAINDIR, "..", "N16_Fitsacs","4_9_MeV"))
+LIBDIR = os.path.dirname(__file__)
+DBDIR = os.path.abspath(os.path.join(LIBDIR,"..", "DB"))
+SACDIR = os.path.abspath(os.path.join(LIBDIR, "sacrifice_rootfiles", "old", "may2016_N16"))
+#DCDIR = os.path.abspath(os.path.join(LIBDIR, "..", "N16_DCsacs", "4_9_MeV"))
+#FITDIR = os.path.abspath(os.path.join(LIBDIR, "..", "N16_Fitsacs","4_9_MeV"))
 
 ######### VARIABLES ########
 energy_range = [5.5,9.0]
-branch = "DC"   #Either DC or Fit
-source = "N16"  #For plot labels
-pcolor = 'b'
-DATE = None  #Input a date to only look at those files. Type as None otherwise
-RUN = None      #Calculate the sacrifice for this run only.  Type None if not in use
-RUNRANGE = [100934,100951]  #Look at the sacrifice for all runs in this range.  Type
 #none if not in use
 ######## /VARIABLES #######
 
-def GetDate(rundicts, date):
-    #Returns the run entries associated with only a specific date
-    datedict = {}
-    for rundict in rundicts:
-        for run in rundict:
-            if rundict[run]["date"] == str(date):
-                datedict[run] = rundict[run]
-    return datedict
-
-def GetRunRange(rundicts,runrange):
-    if runrange[1] < runrange[0]:
-        print("order your run range correctly, come on...")
-        return None
-    rrdict={}
-    for rundict in rundicts:
-        for run in rundict:
-            if runrange[0] <= int(run) <= runrange[1]:
-                rrdict[run] = rundict[run]
-    print(rrdict)
-    return rrdict
-
-def GetRun(rundicts,runnum):
-    datedict={}
-    for rundict in rundicts:
-        for run in rundict:
-            if int(run)==runnum:
-                datedict[run] = rundict[run]
-    return datedict
+class SacrificeAnalysis(object):
+    def __init__(self, hist_rootfiles = [], config_dict = {}, position_dict={}, energy_range = None,
+            run_range=None, source=None)
+        self.hist_rootfiles = hist_rootfiles  #All sacrifice root files
+        self.cdict = config_dict
+        self.energy_range = None
+        self.run_range = None
+        self.rootfiles_toanalyze = []
+        self.all_calib_positions = {}
+        self.LoadAllCalibrationPositions()
+        self.positions_to_analyze = {}
+        self.sacrifice_for_positions = {}
 
 
-def calculate_sacrifice(calib_run_dict, sacrifice_filenames, branch):
+    def LoadAllCalibrationPositions(self):
+        position_filenames = glob.glob(DBDIR+"/"+source+"*.json")
+        pdict = {}
+        for cfile in calibration_filenames:
+            with open(cfile,"r") as f:
+                self.all_calib_positions.append(json.load(f))
+ 
+    def GetDate(self, date):
+        #load position dict with files only associated with given date
+        datedict = {}
+        for rundict in self.all_calib_positions:
+            for run in rundict:
+                if rundict[run]["date"] == str(date):
+                    datedict[run] = rundict[run]
+        self.positions_to_analyze = GetDate
+    
+    def GetRunRange(self,runrange):
+        if runrange[1] < runrange[0]:
+            print("order your run range correctly, come on...")
+            return None
+        rrdict={}
+        for rundict in self.all_calib_positions:
+            for run in rundict:
+                if runrange[0] <= int(run) <= runrange[1]:
+                    rrdict[run] = rundict[run]
+        print(rrdict)
+        self.positions_to_analyze = rrdict
+    
+    def GetRun(rundicts,runnum):
+        datedict={}
+        for rundict in self.all_calib_positions:
+            for run in rundict:
+                if int(run)==runnum:
+                    datedict[run] = rundict[run]
+        self.positions_to_analyze = datedict
+
+
+def calculate_sacrifice(self, branch):
     #Given a calibration run dictionary and the corresponding roots
     #output from either DC_Sacrifice or Beta14ITR_Sacrifice, return an array of
     #positions, sacrifice associated with each position, the uncertainty of that,
     #and the total number of events flagged and total number of events total
-    positions = []
-    source = None
-    total_events = 0
-    total_flagged_events = 0
-    fractional_sac = []
-    fractional_sac_unc = []
-    for run in calib_run_dict:
-        for filename in sacrifice_filenames:
+    self.sacrifice_for_positions["position"] = []
+    self.sacrifice_for_run["position"] = []
+    self.sacrifice_for_positions["total_events"] = 0
+    self.sacrifice_for_positions["total_flagged_events"] = 0
+    self.sacrifice_for_positions["fractional_sac"] = []
+    self.sacrifice_for_positions["fractional_sac_unc"] = []
+    for run in self.positions_to_analyze:
+        for filename in self.hist_rootfiles:
             if run in filename:
                 print(run)
-                if source is None:
-                    source = calib_run_dict[run]["source"]
-                elif source != calib_run_dict[run]["source"]:
-                    print("WARNING: not all sources are of the same...")
                 #Found the filename corresponding to run in meta
                 position = calib_run_dict[run]["position"]
                 positions.append(position)
@@ -121,7 +131,7 @@ def plot_sacrificevsZ(positions, fractional_sac, fractional_sac_unc):
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     ax.errorbar(z_positions,fractional_sac, xerr=0, yerr=fractional_sac_unc, \
-            marker='o', linestyle='none', color = pcolor, alpha=0.6, \
+            marker='o', linestyle='none', color = 'b', alpha=0.6, \
             label = 'Fractional Sacrifice')
     ax.set_xlabel(str(source) + " Z Position (m)")
     ax.set_ylabel("Fraction of events sacrificed")
@@ -141,7 +151,7 @@ def plot_sacrificevsR(positions, fractional_sac, fractional_sac_unc):
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     ax.errorbar(r_positions,fractional_sac, xerr=0, yerr=fractional_sac_unc, \
-            marker='o', linestyle='none', color = pcolor, alpha=0.6, \
+            marker='o', linestyle='none', color = 'b', alpha=0.6, \
             label = 'Fractional Sacrifice')
     ax.set_xlabel(str(source) + " Radius (m)")
     ax.set_ylabel("Fraction of events sacrificed")
@@ -156,12 +166,7 @@ if __name__ == '__main__':
     #First, get all our filenames.
     sacrifice_filenames = glob.glob(SACDIR + "/*")
     #Now, get our calibration dictionary.
-    calibration_filenames = glob.glob(DBDIR+"/"+"N16*.json")
-    calibration_dicts = []
-    for cfile in calibration_filenames:
-        with open(cfile,"r") as f:
-            calibration_dicts.append(json.load(f))
-    if DATE is not None:
+   if DATE is not None:
         plot_dict = GetDate(calibration_dicts, "05/25/2017")
     if RUN is not None:
         plot_dict = GetRun(calibration_dicts, RUN)

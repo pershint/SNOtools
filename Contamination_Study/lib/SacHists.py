@@ -2,14 +2,22 @@
 #Associated with each one.  We're writing this to replace Sacrifice.cc, and have
 #Everything united under one master Python code.  
 
+import ROOT
+import copy
+import os,sys
+
 class SacrificeEstimator(object):
     def __init__(self, rootfiles=[], config_dict={}, save_directory=None):
         self.rootfile_list = rootfiles
         self.cdict = config_dict
         self.sacrifice_histograms = []
         self.save_directory = save_directory
+        if not os.path.exists(self.save_directory):
+            os.makedirs(self.save_directory)
 
     def set_savedirectory(self,directory):
+        if not os.path.exists(directory):
+            os.makedirs(directory)
         self.save_directory = directory
 
     def add_rootfile(self, rootfile):
@@ -34,7 +42,6 @@ class SacrificeEstimator(object):
             h_DC_FracFlagged = ROOT.TH1D("h_DC_FracFlagged", "h_DC_FracFlagged", 58, 0.0, 11.6)
             h_DC_FlaggedEvents = ROOT.TH1D("h_DC_FlaggedEvents", "h_DC_FlaggedEvents", 58, 0.0, 11.6)
     
-            h_DC_FracFlagged = ROOT.TH1D("h_DC_FracFlagged", "h_DC_FracFlagged", 58, 0.0, 11.6)
             h_BI_FlaggedEvents = ROOT.TH1D("h_BI_FlaggedEvents", "h_BI_FlaggedEvents", 58, 0.0, 11.6)
     
             h_BI_FracFlagged = ROOT.TH1D("h_BI_FracFlagged", "h_BI_FracFlagged", 58, 0.0, 11.6)
@@ -48,24 +55,24 @@ class SacrificeEstimator(object):
             datatree=rootfile.Get("output")
             for i in xrange(datatree.GetEntries()):
                 datatree.GetEntry(i)
-                if datatree.posr > self.cdict['posr']:
+                if datatree.posr > self.cdict['r_cut']:
                     continue
                 if datatree.fitValid is False:
                     continue
-                if datatree.isN16 is False:
+                if datatree.isCal is False:
                     continue
-                if ((~datatree.dcFlagged) & self.cdict["path_DC_DCmask"]) > 0:
+                if ((~datatree.dcFlagged) & self.cdict["path_DCmask"]) > 0:
                     continue
-                if ((datatree.triggerWord) & self.cdict["path_DC_trigmask"]) > 0:
+                if ((datatree.triggerWord) & self.cdict["path_trigmask"]) > 0:
                     continue
                 h_AllEvents.Fill(datatree.energy);
-                if (((~datatree.dcFlagged) & self.cdict["cut_DCmask"]) or \
-                        (datatree.triggerWord & self.cdict["cut_trigmask"])):
-                    h_DC_FlaggedEvents.Fill(energy);
-                if ((datatree.beta14 > self.cdict["b14_high"]) or \
-                        (datatree.beta14 < self.cdict["b14_low"]) or \
-                        (datatree.ITR < self.cdict["itr_low"])):
-                    h_BI_FlaggedEvents.Fill(energy);
+                if (((~datatree.dcFlagged) & self.cdict["cut1_DCmask"]) or \
+                        (datatree.triggerWord & self.cdict["cut1_trigmask"])):
+                    h_DC_FlaggedEvents.Fill(datatree.energy);
+                if ((datatree.beta14 > self.cdict["cut2_b14_high"]) or \
+                        (datatree.beta14 < self.cdict["cut2_b14_low"]) or \
+                        (datatree.itr < self.cdict["cut2_itr_low"])):
+                    h_BI_FlaggedEvents.Fill(datatree.energy);
             h_DC_FracFlagged.Divide(h_DC_FlaggedEvents,h_AllEvents,1.,1.,"b")
             h_BI_FracFlagged.Divide(h_BI_FlaggedEvents,h_AllEvents,1.,1.,"b")
 
@@ -79,17 +86,26 @@ class SacrificeEstimator(object):
             h_BI_FracFlagged.GetXaxis().SetTitle("Energy(MeV)")
             h_BI_FracFlagged.GetYaxis().SetTitle("Fractional Sacrifice")
 
+            sachists_thisfile = [copy.deepcopy(h_AllEvents),copy.deepcopy(h_BI_FracFlagged),
+                    copy.deepcopy(h_BI_FlaggedEvents),copy.deepcopy(h_DC_FracFlagged),
+                    copy.deepcopy(h_DC_FlaggedEvents)]
+            self.sacrifice_histograms.append(sachists_thisfile)
+            del h_AllEvents,h_DC_FracFlagged,h_DC_FlaggedEvents,h_BI_FlaggedEvents,\
+                    h_BI_FracFlagged
+        
+
     def SaveHistograms(self):
         for j,rf in enumerate(self.rootfile_list):
             outfilename=rf.split("/")
+            print("ROOTFILE,SPLIT IN ARRAY" + str(outfilename))
             outfilename=outfilename[len(outfilename)-1].rstrip(".root")+"_sachists.root"
-            outfiledir=self.save_directory+"/sachists/"+outfilename
+            print("OUTFILENAME: " + outfilename)
+            outfiledir=self.save_directory+"/sachists"
+            if not os.path.exists(outfiledir):
+                os.makedirs(outfiledir)
             outfile = ROOT.TFile(outfiledir+"/"+outfilename,"CREATE")
             for histogram in self.sacrifice_histograms[j]:
                 outfile.Add(histogram)
             outfile.Write()
             outfile.Close()
 
-    def SaveConfiguration(self,config_outname):
-        saveconfigloc = self.save_directory+"/"+config_outname
-        json.dump(self.cdict, saveconfigloc, sort_keys=True,indent=4)

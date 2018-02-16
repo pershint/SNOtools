@@ -1,12 +1,14 @@
 #Class takes in a configuration file and returns a python dictionary format.
 #Also has checks to make sure types aren't dumb
+import json
 
 class ConfigParser(object):
     def __init__(self, configfileloc):
         self.configfile = configfileloc
+        print("CONFIGFILE: " + str(self.configfile))
         self.config_dict = {}
 
-    def Parse(self):
+    def Parse_ini(self):
         configdict = {}
         with open(self.configfile,"r") as f:
             for line in f:
@@ -23,5 +25,13 @@ class ConfigParser(object):
                 configdict[str(key)]=value.rstrip('\n')
         self.config_dict = configdict
         return configdict
+        
+    def Load_JsonConfig(self):
+        with open(self.configfile,"r") as f:
+            configdict = json.load(f)
+        self.config_dict = configdict
+        return configdict
 
-
+    def SaveConfiguration(self,save_dir, config_outname):
+        saveconfigloc = savedir+"/"+config_outname
+        json.dump(self.config_dict, saveconfigloc, sort_keys=True,indent=4)
