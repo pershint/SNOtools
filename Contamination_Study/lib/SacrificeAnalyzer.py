@@ -24,13 +24,7 @@ import glob
 LIBDIR = os.path.dirname(__file__)
 DBDIR = os.path.abspath(os.path.join(LIBDIR,"..", "DB"))
 SACDIR = os.path.abspath(os.path.join(LIBDIR, "sacrifice_rootfiles", "old", "may2016_N16"))
-#DCDIR = os.path.abspath(os.path.join(LIBDIR, "..", "N16_DCsacs", "4_9_MeV"))
-#FITDIR = os.path.abspath(os.path.join(LIBDIR, "..", "N16_Fitsacs","4_9_MeV"))
 
-######### VARIABLES ########
-energy_range = [5.5,9.0]
-#none if not in use
-######## /VARIABLES #######
 
 class SacrificeAnalysis(object):
     def __init__(self, hist_rootfiles = [], config_dict = {}, position_dict={}, energy_range = None,
@@ -83,17 +77,19 @@ class SacrificeAnalysis(object):
         self.positions_to_analyze = datedict
 
 
-def calculate_sacrifice(self, branch):
+def calculate_sacrifice(self):
     #Given a calibration run dictionary and the corresponding roots
     #output from either DC_Sacrifice or Beta14ITR_Sacrifice, return an array of
     #positions, sacrifice associated with each position, the uncertainty of that,
     #and the total number of events flagged and total number of events total
-    self.sacrifice_for_positions["position"] = []
-    self.sacrifice_for_run["position"] = []
-    self.sacrifice_for_positions["total_events"] = 0
-    self.sacrifice_for_positions["total_flagged_events"] = 0
-    self.sacrifice_for_positions["fractional_sac"] = []
-    self.sacrifice_for_positions["fractional_sac_unc"] = []
+    for cut in ['cut1','cut2']:
+        self.sacrifice_for_positions[cut]["position"] = []
+        #FIXME: Need to address if a run has subruns (just append)
+        self.sacrifice_for_positions[cut]["run"] = []
+        self.sacrifice_for_positions[cut]["total_events"] = 0
+        self.sacrifice_for_positions[cut]["total_flagged_events"] = 0
+        self.sacrifice_for_positions[cut]["fractional_sac"] = []
+        self.sacrifice_for_positions[cut]["fractional_sac_unc"] = []
     for run in self.positions_to_analyze:
         for filename in self.hist_rootfiles:
             if run in filename:
@@ -105,22 +101,24 @@ def calculate_sacrifice(self, branch):
                 #Now we get this run's sacrifice information
                 _file0 = ROOT.TFile.Open(filename,"READ")
                 h_all = copy.deepcopy(_file0.Get("h_AllEvents"))
-                if branch == "DC":
-                    h_flagged = copy.deepcopy(_file0.Get("h_DC_FlaggedEvents"))
-                elif branch == "Fit":
-                    h_flagged = copy.deepcopy(_file0.Get("h_BI_FlaggedEvents"))
-                #FIXME: For the specified energy range, get only the entries from
-                #Those bins
                 numall = float(h_all.GetEntries())
-                total_events = total_events + numall
-                numflagged= float(h_flagged.GetEntries())
-                total_flagged_events = total_flagged_events + numflagged
-                fractional_sac.append( numflagged / numall)
-                fractional_sac_unc.append( np.sqrt((np.sqrt(numflagged) / numall)**2+\
-                        ((numflagged*np.sqrt(numall))/(numall**2))**2))
-    fractional_sac = np.array(fractional_sac)
-    fractional_sac_unc = np.array(fractional_sac_unc)
-    return positions, fractional_sac, fractional_sac_unc, numall, numflagged
+                self.sacrifice_for_positions["total_events"] = \
+                        self.sacrifice_for_positions["total_events"] + numall
+               for cut in ['cut1','cut2']:
+                    h_cutflagged = copy.deepcopy(_file0.Get("h_"+cut+"_FlaggedEvents"))
+                    #FIXME: For the specified energy range, get only the entries from
+                    #Those bins
+                    cut_numflagged= float(h_cutflagged.GetEntries())
+                    cut_fractional_sac = ( numflagged / numall)
+                    fractional_sac_unc = np.sqrt((np.sqrt(numflagged) / numall)**2+\
+                            ((numflagged*np.sqrt(numall))/(numall**2))**2)
+                    self.sacrifice_for_positions[cut]["flagged_events"] = \
+                            self.sacrifice_for_positions[cut]["flagged_events"] + numflagged
+                    self.sacrifice_for_positions[cut]["fractional_sac_unc"].append(ractional_sac_unc)
+                    self.sacrifice_for_positions[cut]["fractional_sac"].append(fractional_sac)
+
+    def save_sacrifice_for_positions(self):
+        print("GOTTA MAKE THE SAVE")
 
 def plot_sacrificevsZ(positions, fractional_sac, fractional_sac_unc):
     z_positions = []

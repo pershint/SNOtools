@@ -39,17 +39,17 @@ class SacrificeEstimator(object):
         for rf in self.rootfile_list:
             rootfile = ROOT.TFile(rf,"READ")
             h_AllEvents = ROOT.TH1D("h_AllEvents", "h_AllEvents", 58, 0.0, 11.6)
-            h_DC_FracFlagged = ROOT.TH1D("h_DC_FracFlagged", "h_DC_FracFlagged", 58, 0.0, 11.6)
-            h_DC_FlaggedEvents = ROOT.TH1D("h_DC_FlaggedEvents", "h_DC_FlaggedEvents", 58, 0.0, 11.6)
+            h_cut1_FracFlagged = ROOT.TH1D("h_cut1_FracFlagged", "h_cut1_FracFlagged", 58, 0.0, 11.6)
+            h_cut1_FlaggedEvents = ROOT.TH1D("h_cut1_FlaggedEvents", "h_cut1_FlaggedEvents", 58, 0.0, 11.6)
     
-            h_BI_FlaggedEvents = ROOT.TH1D("h_BI_FlaggedEvents", "h_BI_FlaggedEvents", 58, 0.0, 11.6)
+            h_cut2_FlaggedEvents = ROOT.TH1D("h_cut2_FlaggedEvents", "h_cut2_FlaggedEvents", 58, 0.0, 11.6)
     
-            h_BI_FracFlagged = ROOT.TH1D("h_BI_FracFlagged", "h_BI_FracFlagged", 58, 0.0, 11.6)
+            h_cut2_FracFlagged = ROOT.TH1D("h_cut2_FracFlagged", "h_cut2_FracFlagged", 58, 0.0, 11.6)
             h_AllEvents.Sumw2()
-            h_DC_FracFlagged.Sumw2()
-            h_DC_FlaggedEvents.Sumw2()
-            h_BI_FracFlagged.Sumw2()
-            h_BI_FlaggedEvents.Sumw2()
+            h_cut1_FracFlagged.Sumw2()
+            h_cut1_FlaggedEvents.Sumw2()
+            h_cut2_FracFlagged.Sumw2()
+            h_cut2_FlaggedEvents.Sumw2()
             #Need the tree that has the data, then xrange it
             rootfile.cd()
             datatree=rootfile.Get("output")
@@ -68,30 +68,30 @@ class SacrificeEstimator(object):
                 h_AllEvents.Fill(datatree.energy);
                 if (((~datatree.dcFlagged) & self.cdict["cut1_DCmask"]) or \
                         (datatree.triggerWord & self.cdict["cut1_trigmask"])):
-                    h_DC_FlaggedEvents.Fill(datatree.energy);
+                    h_cut1_FlaggedEvents.Fill(datatree.energy);
                 if ((datatree.beta14 > self.cdict["cut2_b14_high"]) or \
                         (datatree.beta14 < self.cdict["cut2_b14_low"]) or \
                         (datatree.itr < self.cdict["cut2_itr_low"])):
-                    h_BI_FlaggedEvents.Fill(datatree.energy);
-            h_DC_FracFlagged.Divide(h_DC_FlaggedEvents,h_AllEvents,1.,1.,"b")
-            h_BI_FracFlagged.Divide(h_BI_FlaggedEvents,h_AllEvents,1.,1.,"b")
+                    h_cut2_FlaggedEvents.Fill(datatree.energy);
+            h_cut1_FracFlagged.Divide(h_DC_FlaggedEvents,h_AllEvents,1.,1.,"b")
+            h_cut2_FracFlagged.Divide(h_BI_FlaggedEvents,h_AllEvents,1.,1.,"b")
 
-            h_DC_FlaggedEvents.GetXaxis().SetTitle("Energy(MeV)")
-            h_DC_FlaggedEvents.GetYaxis().SetTitle("Events")
-            h_DC_FracFlagged.GetXaxis().SetTitle("Energy(MeV)")
-            h_DC_FracFlagged.GetYaxis().SetTitle("Fractional Sacrifice")
+            h_cut1_FlaggedEvents.GetXaxis().SetTitle("Energy(MeV)")
+            h_cut1_FlaggedEvents.GetYaxis().SetTitle("Events")
+            h_cut1_FracFlagged.GetXaxis().SetTitle("Energy(MeV)")
+            h_cut1_FracFlagged.GetYaxis().SetTitle("Fractional Sacrifice")
 
-            h_BI_FlaggedEvents.GetXaxis().SetTitle("Energy(MeV)")
-            h_BI_FlaggedEvents.GetYaxis().SetTitle("Events")
-            h_BI_FracFlagged.GetXaxis().SetTitle("Energy(MeV)")
-            h_BI_FracFlagged.GetYaxis().SetTitle("Fractional Sacrifice")
+            h_cut2_FlaggedEvents.GetXaxis().SetTitle("Energy(MeV)")
+            h_cut2_FlaggedEvents.GetYaxis().SetTitle("Events")
+            h_cut2_FracFlagged.GetXaxis().SetTitle("Energy(MeV)")
+            h_cut2_FracFlagged.GetYaxis().SetTitle("Fractional Sacrifice")
 
-            sachists_thisfile = [copy.deepcopy(h_AllEvents),copy.deepcopy(h_BI_FracFlagged),
-                    copy.deepcopy(h_BI_FlaggedEvents),copy.deepcopy(h_DC_FracFlagged),
-                    copy.deepcopy(h_DC_FlaggedEvents)]
+            sachists_thisfile = [copy.deepcopy(h_AllEvents),copy.deepcopy(h_cut2_FracFlagged),
+                    copy.deepcopy(h_cut2_FlaggedEvents),copy.deepcopy(h_cut1_FracFlagged),
+                    copy.deepcopy(h_cut1_FlaggedEvents)]
             self.sacrifice_histograms.append(sachists_thisfile)
-            del h_AllEvents,h_DC_FracFlagged,h_DC_FlaggedEvents,h_BI_FlaggedEvents,\
-                    h_BI_FracFlagged
+            del h_AllEvents,h_cut1_FracFlagged,h_cut1_FlaggedEvents,h_cut2_FlaggedEvents,\
+                    h_cut2_FracFlagged
         
 
     def SaveHistograms(self):
