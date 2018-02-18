@@ -32,6 +32,7 @@ class ConfigParser(object):
         self.config_dict = configdict
         return configdict
 
-    def SaveConfiguration(self,save_dir, config_outname):
+    def SaveConfiguration(self,config_dict, savedir,config_outname):
         saveconfigloc = savedir+"/"+config_outname
-        json.dump(self.config_dict, saveconfigloc, sort_keys=True,indent=4)
+        with open(saveconfigloc,"w") as f:
+            json.dump(config_dict, f, sort_keys=True,indent=4)

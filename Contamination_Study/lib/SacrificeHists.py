@@ -6,19 +6,16 @@ import ROOT
 import copy
 import os,sys
 
-class SacrificeEstimator(object):
-    def __init__(self, rootfiles=[], config_dict={}, save_directory=None):
+class SacrificeHistGen(object):
+    def __init__(self, rootfiles=[], config_dict={},sourcetype=None):
+        self.sourcetype = sourcetype
         self.rootfile_list = rootfiles
+        self.nbins = 14
+        self.elow = config_dict["E_low"]
+        self.ehigh = config_dict["E_high"]
         self.cdict = config_dict
         self.sacrifice_histograms = []
-        self.save_directory = save_directory
-        if not os.path.exists(self.save_directory):
-            os.makedirs(self.save_directory)
-
-    def set_savedirectory(self,directory):
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        self.save_directory = directory
+        self.histogram_files = []
 
     def add_rootfile(self, rootfile):
         #Add a rootfile to the list of rootfiles to perform analysis on
@@ -32,19 +29,20 @@ class SacrificeEstimator(object):
         ConParser = cp.ConfigParser(config_file)
         self.cdict = ConParser.parse_file()
 
-    def EstimateSacrifice(self):
+    def GenerateHistograms(self):
         #We will generate sacrifice histograms for each rootfile loaded in
         #Clears currenet sacrifice_histogram list first
         self.sacrifice_histograms = []
         for rf in self.rootfile_list:
             rootfile = ROOT.TFile(rf,"READ")
-            h_AllEvents = ROOT.TH1D("h_AllEvents", "h_AllEvents", 58, 0.0, 11.6)
-            h_cut1_FracFlagged = ROOT.TH1D("h_cut1_FracFlagged", "h_cut1_FracFlagged", 58, 0.0, 11.6)
-            h_cut1_FlaggedEvents = ROOT.TH1D("h_cut1_FlaggedEvents", "h_cut1_FlaggedEvents", 58, 0.0, 11.6)
+            h_AllEvents = ROOT.TH1D("h_AllEvents", "h_AllEvents", self.nbins,
+                    self.elow, self.ehigh)
+            h_cut1_FracFlagged = ROOT.TH1D("h_cut1_FracFlagged", "h_cut1_FracFlagged", self.nbins,self.elow,self.ehigh)
+            h_cut1_FlaggedEvents = ROOT.TH1D("h_cut1_FlaggedEvents", "h_cut1_FlaggedEvents", self.nbins,self.elow,self.ehigh)
     
-            h_cut2_FlaggedEvents = ROOT.TH1D("h_cut2_FlaggedEvents", "h_cut2_FlaggedEvents", 58, 0.0, 11.6)
+            h_cut2_FlaggedEvents = ROOT.TH1D("h_cut2_FlaggedEvents", "h_cut2_FlaggedEvents", self.nbins,self.elow,self.ehigh)
     
-            h_cut2_FracFlagged = ROOT.TH1D("h_cut2_FracFlagged", "h_cut2_FracFlagged", 58, 0.0, 11.6)
+            h_cut2_FracFlagged = ROOT.TH1D("h_cut2_FracFlagged", "h_cut2_FracFlagged", self.nbins,self.elow,self.ehigh)
             h_AllEvents.Sumw2()
             h_cut1_FracFlagged.Sumw2()
             h_cut1_FlaggedEvents.Sumw2()
@@ -73,8 +71,8 @@ class SacrificeEstimator(object):
                         (datatree.beta14 < self.cdict["cut2_b14_low"]) or \
                         (datatree.itr < self.cdict["cut2_itr_low"])):
                     h_cut2_FlaggedEvents.Fill(datatree.energy);
-            h_cut1_FracFlagged.Divide(h_DC_FlaggedEvents,h_AllEvents,1.,1.,"b")
-            h_cut2_FracFlagged.Divide(h_BI_FlaggedEvents,h_AllEvents,1.,1.,"b")
+            h_cut1_FracFlagged.Divide(h_cut1_FlaggedEvents,h_AllEvents,1.,1.,"b")
+            h_cut2_FracFlagged.Divide(h_cut2_FlaggedEvents,h_AllEvents,1.,1.,"b")
 
             h_cut1_FlaggedEvents.GetXaxis().SetTitle("Energy(MeV)")
             h_cut1_FlaggedEvents.GetYaxis().SetTitle("Events")
@@ -94,13 +92,14 @@ class SacrificeEstimator(object):
                     h_cut2_FracFlagged
         
 
-    def SaveHistograms(self):
+    def SaveHistograms(self,savedir):
+        self.histogram_files = []
         for j,rf in enumerate(self.rootfile_list):
             outfilename=rf.split("/")
             print("ROOTFILE,SPLIT IN ARRAY" + str(outfilename))
             outfilename=outfilename[len(outfilename)-1].rstrip(".root")+"_sachists.root"
             print("OUTFILENAME: " + outfilename)
-            outfiledir=self.save_directory+"/sachists"
+            outfiledir=savedir+"/sachists"
             if not os.path.exists(outfiledir):
                 os.makedirs(outfiledir)
             outfile = ROOT.TFile(outfiledir+"/"+outfilename,"CREATE")
@@ -108,4 +107,5 @@ class SacrificeEstimator(object):
                 outfile.Add(histogram)
             outfile.Write()
             outfile.Close()
+            self.histogram_files.append(outfiledir+"/"+outfilename)
 
