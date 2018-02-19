@@ -55,6 +55,9 @@ class SacrificeHistGen(object):
                 datatree.GetEntry(i)
                 if datatree.posr > self.cdict['r_cut']:
                     continue
+                if datatree.energy > self.cdict["E_high"] or datatree.energy < \
+                        self.cdict["E_low"]:
+                    continue
                 if datatree.fitValid is False:
                     continue
                 if datatree.isCal is False:

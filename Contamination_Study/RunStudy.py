@@ -21,6 +21,7 @@ import json
 CONFIGFILE='cuts_default.json'
 JOBNUM=0
 SOURCE="N16"
+PLOTS=True
 ERANGE=None
 DEBUG=True
 
@@ -70,11 +71,18 @@ if __name__ == '__main__':
     SacSysUnc = sa.SacrificeSystematics(Sacrifice_Histograms=SacHists,\
             config_dict=config_dict)
     SacSysUnc.LoadCalibrationPositions(DBDIR)
-    SacSysUnc.CalculateAcceptances()
+    SacSysUnc.CalculateSacrifices()
     if DEBUG is True:
-        SacSysUnc.ShowAcceptanceResults()
-    SacSysUnc.SaveAcceptanceByRun(SAVEDIR,"cut_acceptances_byrun.json")
-    SacSysUnc.SaveAcceptanceSummary(SAVEDIR,"cut_acceptances_total.json")
+        SacSysUnc.ShowSacrificeResults()
+    SacSysUnc.SaveSacrificeByRun(SAVEDIR,"cut_sacrifices_byrun.json")
+    SacSysUnc.SaveSacrificeSummary(SAVEDIR,"cut_sacrifices_total.json")
+
+    if PLOTS is True:
+        for axis in ['x','y','z']:
+            sp.plot_sacrificevsCart(SacSysUnc.cut_sacrifices, 'cut1', axis)
+            sp.plot_sacrificevsCart(SacSysUnc.cut_sacrifices, 'cut2', axis)
+        for cut in ['cut1','cut2']:
+            sp.plot_sacrificevsR(SacSysUnc.cut_sacrifices, cut)
 
     #Run bifurcation analysis on Physics files
     #Bifurcator = bi.Bifurcator(rootfiles=physics_roots,config_dict=config_dict,
