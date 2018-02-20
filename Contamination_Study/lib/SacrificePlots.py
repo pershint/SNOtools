@@ -12,9 +12,12 @@ def plot_XYSacrifice(cut_acceptances_byrun, cut):
             x_points.append(positions[0])
             y_points.append(positions[1])
             fracsac.append(cdict["fractional_sac"][j])
+    if len(fracsac) == 0:
+        print("No N16 sacrifice data in these results on the z-axis.")
+        return
     x_points = np.array(x_points)
     y_points = np.array(y_points)
-    fracsac = np.array(z_points)
+    fracsac = np.array(fracsac)
 
     plt.contourf(x_points,y_points,fracsac)
     plt.colorbar()
