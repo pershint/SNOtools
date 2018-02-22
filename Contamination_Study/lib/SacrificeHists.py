@@ -62,7 +62,7 @@ class SacrificeHistGen(object):
                     continue
                 if datatree.isCal is False:
                     continue
-                if ((~datatree.dcFlagged) & self.cdict["path_DCmask"]) > 0:
+                if ((~datatree.dcFlagged) & self.cdict["sacpath_DCmask"]) > 0:
                     continue
                 if ((datatree.triggerWord) & self.cdict["path_trigmask"]) > 0:
                     continue

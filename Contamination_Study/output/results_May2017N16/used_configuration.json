@@ -1,6 +1,7 @@
 {
     "E_high": 9.0, 
     "E_low": 5.5, 
+    "bifurpath_DCmask": 135239930372322, 
     "cut1_DCmask": 73500, 
     "cut1_b14_high": 0, 
     "cut1_b14_low": 0, 
@@ -13,7 +14,7 @@
     "cut2_trigmask": 0, 
     "dcs_sonly": 0, 
     "fits_only": 0, 
-    "path_DCmask": 57570, 
     "path_trigmask": 5216, 
-    "r_cut": 5500
+    "r_cut": 5500, 
+    "sacpath_DCmask": 117647744327906
 }

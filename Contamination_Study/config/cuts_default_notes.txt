@@ -1,6 +1,8 @@
 
 Description of different cut configuration toggles
-path_DCmask: pathological cuts
+sacpath_DCmask: pathological cuts used to estimate sacrifice
+(this is different than bifurpath because missedmuonfollower is energy biased in N16)
+bifurpath_DCmask: pathological cuts used in making bifurcation boxes
 muon, tpmuonshort&long,junk,ringoffire,zerozero, itc
 path_trigmask: esumhi, esumlo, ped, pgt
 fits(dcs)_only: 0 for false, 1 for true

@@ -1,15 +1,15 @@
 {
     "cut1": {
-        "total_events": 117236.0, 
-        "total_evtsflagged": 983.0, 
-        "total_fracsac": 0.008384796478897267, 
-        "total_fracsac_unc": 0.00026855232166865376
+        "total_events": 131626.0, 
+        "total_evtsflagged": 1116.0, 
+        "total_fracsac": 0.008478568064060292, 
+        "total_fracsac_unc": 0.00025487295265728147
     }, 
     "cut2": {
-        "total_events": 117236.0, 
-        "total_evtsflagged": 75.0, 
-        "total_fracsac": 0.0006397352349107782, 
-        "total_fracsac_unc": 7.3893886944057077e-05
+        "total_events": 131626.0, 
+        "total_evtsflagged": 87.0, 
+        "total_fracsac": 0.0006609636394025497, 
+        "total_fracsac_unc": 7.0886155266434121e-05
     }, 
     "sourcetype": "N16"
 }

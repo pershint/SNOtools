@@ -101,7 +101,7 @@ class Bifurcator(object):
                 if datatree.energy > self.cdict['E_high'] or \
                         datatree.energy < self.cdict['E_low']:
                     continue
-                if ((~datatree.dcFlagged) & self.cdict["path_DCmask"]) > 0:
+                if ((~datatree.dcFlagged) & self.cdict["bifurpath_DCmask"]) > 0:
                     continue
                 if ((datatree.triggerWord) & self.cdict["path_trigmask"]) > 0:
                     continue
