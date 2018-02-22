@@ -13,7 +13,7 @@
     "cut2_trigmask": 0, 
     "dcs_sonly": 0, 
     "fits_only": 0, 
-    "path_DCmask": 100055558282390, 
+    "path_DCmask": 57570, 
     "path_trigmask": 5216, 
     "r_cut": 5500
 }
