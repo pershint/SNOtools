@@ -3,6 +3,7 @@
 #Using the given calibration files.  Then, the bifurcation analysis is run over
 #the given data physics files.  Finally, an estimate on the contamination for the
 #chosen configuration of cuts/ROI choice is output.
+import matplotlib.pyplot as plt
 
 import ROOT
 import numpy as np
@@ -11,6 +12,7 @@ import lib.SacrificeHists as sh
 import lib.plots.SacrificePlots as sp
 import lib.plots.BifurPlots as bp
 import lib.SacrificeAnalyzer as sa
+import lib.ContaminationAnalyzer as ca
 import lib.ConfigParser as cp
 import lib.CalibSelector as cs
 import lib.ResultUtils as ru
@@ -27,8 +29,8 @@ ZCUT=600.0
 SOURCE="N16"
 PLOTS=False
 SACANALYSIS=False
-BIFURCATE=True
-ESTIMATECONTAMINATION=False
+BIFURCATE=False
+ESTIMATECONTAMINATION=True
 ERANGE=None
 DEBUG=True
 
@@ -98,4 +100,11 @@ if __name__ == '__main__':
     if ESTIMATECONTAMINATION is True:
         bifurcation_summary = ru.LoadJson(RESULTDIR,"bifurcation_boxes.json")
         cut_sac_summary = ru.LoadJson(RESULTDIR,"cut_sacrifices_total.json")
-        CE = ca.ContaminationEstimator(bifurcation_summary,cut_sac_summary)   
+        CE = ca.ContaminationEstimator(bifurcation_summary,cut_sac_summary)
+        CE.CalculateContaminationValues() #Calculate contamination eqns.
+        if PLOTS is True:
+            values = CE.BootstrapCL(0.90,100000) #Estimate upper end of y1y2
+            values=values*CE.contamination_summary['est_bkg_evts']
+            plt.hist(values,100,range=(min(values),max(values)))
+            plt.show()
+        CE.SaveContaminationSummary(RESULTDIR,"contamination_summary.json")
