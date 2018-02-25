@@ -1,0 +1,85 @@
+#This code reads acceptance values and the bifurcation box values output from a
+#Sacrifice analysis and bifurcation analysis, respectively.
+
+
+import os,sys
+import copy
+import numpy as np
+import matplotlib.pyplot as plt
+import playDarts as pd
+import scipy as sp
+import json
+import ROOT
+import glob
+
+class ContaminationEstimator(object):
+    def __init__(self, Bifurcation_Summary=None, Sacrifice_Summary=None):
+        self.ss = Sacrifice_Summary
+        self.contamination_summary = {}
+
+        self.a = Bifurcation_Summary['a']
+        self.b = Bifurcation_Summary['b']
+        self.c = Bifurcation_Summary['c']
+        self.d = Bifurcation_Summary['d']
+
+        #Assume that all events in b, c, and d are background
+        self.bkg_events = self.b + self.c + self.d
+
+        self.x1 = 1.0 - Sacrifice_Summary['cut1']['total_fracsac']
+        self.x2 = 1.0 - Sacrifice_Summary['cut2']['total_fracsac']
+        self.x1_unc = Sacrifice_Summary['cut1']['total_fracsac_unc']
+        self.x2_unc = Sacrifice_Summary['cut2']['total_fracsac_unc']
+
+    #Equation 1 of bifur. analysis
+    def __y_1(self,a,b,x1,bkg):
+        return ((a + b) - x1*a)/bkg
+    #Equation 2 of bifur. analysis
+    def __y_2(self,a,c,x2,bkg):
+        return ((a + c) - x1*a)/bkg
+    #Equation 3 of bifur. analysis
+    def __y1y2(self, a, x1, x2, bkg):
+        return (a - (x1 * x2 * a))/bkg_events
+
+    def avg_y1y2(self,a,b,c,x1,x2,bkg):
+        return (self.__y1y2(a,x1,x2,bkg) + self.__y_1(a,b,x1,bkg)*self.__y_2(a,c,x2,bkg))/2.0
+
+    #FIXME: Need to have these be functional fills
+    def highest_y1y2(self):
+        if self.__y1y2() > (self.__y_1()*self.__y_2()):
+            return self.__y1y2()
+        else:
+            return (self.__y_1()*self.__y_2()) 
+
+    def leastsq_y1y2(self):
+        phi_1 = self.__y1y2()
+        phi_2 = self.__y_1() * self.__y_2()
+        if phi_1 == 0:
+            print("THE y1y2 TERM IS ZERO.  ASSUMING THE PRODUCT IS THE OTHER")
+            print("TERM BECAUSE THE LEAST SQUARES SOLUTION IS INVALID")
+            return phi_2
+        if phi_2 == 0:
+            print("EQNS. 1 OR 2 ARE ZERO.  ASSUMING THE PRODUCT IS THE OTHER")
+            print("TERM BECAUSE THE LEAST SQUARES SOLUTION IS INVALID")
+            return phi_1
+        #Now, we have two equations: p1 - y1y2 = 0, and p2 - y1y2 = 0
+        #The analytical solution for the sum of the squares will give the
+        #"least wrong" value for y1y2. Ignore the imaginary if you're solving
+        #directly...
+        return (phi_2*phi_1**2 + phi1*phi_2**2)/(phi_1**2 + phi_2**2)
+
+    def BootstrapCL(self,CL,n):
+        #Using the bifurcation boxes as averages, shoot values for a,b,c, and d
+        #assuming poisson fluctuations.  Also shoots from a gaussian for the 
+        #acceptances.
+        ashot = pd.RandShoot_p(self.a, n)
+        bshot = pd.RandShoot_p(self.b, n)
+        cshot = pd.RandShoot_p(self.c, n)
+        dshot = pd.RandShoot_p(self.d, n)
+        bkgevts = bshot + cshot + dshot
+        x1_shot = pd.RandShoot(self.x1, self.x1_unc, n)
+        x2_shot = pd.RandShoot(self.x2, self.x2_unc, n)
+        #FIXME: make different y1y2 options available
+        avg_y1y2s = self.avg_y1y2(ashot, bshot, cshot, x1_shot, x2_shot, bkgevts)
+        y1y2_CL = avg_y1y2s[int(float(CL)*float(len(avg_y1y2s)))]
+        return avg_y1y2s, y1y2_CL
+

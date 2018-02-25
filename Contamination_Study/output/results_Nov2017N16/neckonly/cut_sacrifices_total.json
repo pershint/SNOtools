@@ -1,0 +1,17 @@
+{
+    "cut1": {
+        "nonpath_events": 1145968.0, 
+        "total_events": 4682693.0, 
+        "total_evtsflagged": 25827.0, 
+        "total_fracsac": 0.0225372785278472, 
+        "total_fracsac_unc": 0.00014180908855352146
+    }, 
+    "cut2": {
+        "nonpath_events": 1145968.0, 
+        "total_events": 4682693.0, 
+        "total_evtsflagged": 835.0, 
+        "total_fracsac": 0.0007286416374628262, 
+        "total_fracsac_unc": 2.5224868569206868e-05
+    }, 
+    "sourcetype": "N16"
+}

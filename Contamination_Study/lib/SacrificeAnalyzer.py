@@ -21,10 +21,6 @@ import json
 import ROOT
 import glob
 
-LIBDIR = os.path.dirname(__file__)
-SACDIR = os.path.abspath(os.path.join(LIBDIR, "sacrifice_rootfiles", "old", "may2016_N16"))
-
-
 class SacrificeSystematics(object):
     def __init__(self, Sacrifice_Histograms=None, config_dict = {}):
         self.hist_rootfiles = Sacrifice_Histograms.histogram_files  #All sacrifice root files
@@ -54,16 +50,18 @@ class SacrificeSystematics(object):
             self.cut_sacrifices[cut] = {}
             self.sacrifice_summary[cut] = {}
             self.sacrifice_summary[cut]["total_events"] = 0
+            self.sacrifice_summary[cut]["nonpath_events"] = 0
             self.sacrifice_summary[cut]["total_evtsflagged"] = 0
             self.sacrifice_summary[cut]["total_fracsac"] = 0.0
             self.sacrifice_summary[cut]["total_fracsac_unc"] = 0.0
             self.cut_sacrifices[cut]["position"] = []
             #FIXME: Need to address if a run has subruns (just append)
             self.cut_sacrifices[cut]["run"] = []
+            self.cut_sacrifices[cut]["total_events"] = []
             self.cut_sacrifices[cut]["events_flagged"] = []
             self.cut_sacrifices[cut]["fractional_sac"] = []
             self.cut_sacrifices[cut]["fractional_sac_unc"] = []
-            self.cut_sacrifices[cut]["total_events"] = []
+            self.cut_sacrifices[cut]["nonpath_events"] = []
         for run in self.calib_positions:
             for filename in self.hist_rootfiles:
                 if run in filename:
@@ -71,17 +69,21 @@ class SacrificeSystematics(object):
                     position = self.calib_positions[run]["position"]
                     #Now we get this run's sacrifice information
                     _file0 = ROOT.TFile.Open(filename,"READ")
+                    h_allnonpath = copy.deepcopy(_file0.Get("h_AllNonpathEvents"))
                     h_all = copy.deepcopy(_file0.Get("h_AllEvents"))
                     numall = float(h_all.GetEntries())
+                    numnonpath = float(h_allnonpath.GetEntries())
                     for cut in ['cut1','cut2']:
                         h_cutflagged = copy.deepcopy(_file0.Get("h_"+cut+"_FlaggedEvents"))
                         cut_numflagged= float(h_cutflagged.GetEntries())
-                        cut_fractional_sac = ( cut_numflagged / numall)
+                        cut_fractional_sac = ( cut_numflagged / numnonpath)
                         cut_frac_sac_unc = np.sqrt((np.sqrt(cut_numflagged) /\
-                                numall)**2+((cut_numflagged*np.sqrt(numall))/(numall**2))**2)
+                                numnonpath)**2+((cut_numflagged*np.sqrt(numnonpath))/(numnonpath**2))**2)
                         self.sacrifice_summary[cut]["total_events"]+=numall
+                        self.sacrifice_summary[cut]["nonpath_events"]+=numnonpath
                         self.cut_sacrifices[cut]["run"].append(int(run))
                         self.cut_sacrifices[cut]["total_events"].append(numall)
+                        self.cut_sacrifices[cut]["nonpath_events"].append(numnonpath)
                         self.sacrifice_summary[cut]["total_evtsflagged"]+=cut_numflagged
                         self.cut_sacrifices[cut]["position"].append(position)
                         self.cut_sacrifices[cut]["events_flagged"].append(cut_numflagged)
@@ -89,7 +91,7 @@ class SacrificeSystematics(object):
                         self.cut_sacrifices[cut]["fractional_sac"].append(cut_fractional_sac)
         #Calculate the total fractional acceptance and uncertainty now
         for cut in ['cut1','cut2']:
-            total = float(self.sacrifice_summary[cut]["total_events"])
+            total = float(self.sacrifice_summary[cut]["nonpath_events"])
             totalflagged = float(self.sacrifice_summary[cut]["total_evtsflagged"])
             self.sacrifice_summary[cut]["total_fracsac"] = totalflagged/total
             self.sacrifice_summary[cut]["total_fracsac_unc"] = np.sqrt((np.sqrt(totalflagged) /\

@@ -1,3 +1,4 @@
+import json
 import sys
 import ROOT
 
@@ -7,14 +8,11 @@ import ROOT
 #Pass the preliminary cuts defined in the config file.
 
 class Bifurcator(object):
-    def __init__(self,rootfiles=[], config_dict={}, save_directory=None):
+    def __init__(self,rootfiles=[], config_dict={}):
         self.rootfile_list = rootfiles
         self.cdict = config_dict
-        self.sacrifice_histograms = []
-        self.save_directory = save_directory
-        if not os.path.exists(self.save_directory):
-            os.makedirs(self.save_directory)
         self.bifurcation_rootfile = None
+        self.bifurcation_summary = {}
 
     def set_savedirectory(self,directory):
         if not os.path.exists(directory):
@@ -34,8 +32,58 @@ class Bifurcator(object):
         self.cdict = ConParser.parse_file()
 
     def Bifurcate(self):
+        #Returns the a,b,c, and d box values for the rootfiles loaded in
+        ch = ROOT.TChain("output")
+        for f in self.rootfile_list:
+            ch.Add(f)
+        basecuts = []
+        basecuts.append("posr<"+str(self.cdict['r_cut']))
+        basecuts.append("energy<"+str(self.cdict['E_high']))
+        basecuts.append("energy>"+str(self.cdict['E_low']))
+        basecuts.append("fitValid==1")
+        basecuts.append("((dcFlagged&%s)==%s)" % (self.cdict["bifurpath_DCmask"],\
+                self.cdict["bifurpath_DCmask"]))
+        basecuts.append("((triggerWord&%s)==0)" % (self.cdict["path_trigmask"]))
+        cut1list = []
+        cut1list.append("((dcFlagged&%s)!=%s)" % (self.cdict["cut1_DCmask"],\
+                self.cdict["cut1_DCmask"]))
+        cut1list.append("((triggerWord&%s)!=0)" % (self.cdict["cut1_trigmask"]))
+        cut2list = []
+        cut2list.append("beta14>%s" % (self.cdict["cut2_b14_high"]))
+        cut2list.append("beta14<%s" % (self.cdict["cut2_b14_low"]))
+        cut2list.append("itr<%s" % (self.cdict["cut2_itr_low"]))
+        base = self.cutfuse(basecuts, "&&")
+        abox_cuts = base + "&&(!(%s))&&(!(%s))" % \
+                (self.cutfuse(cut1list,"||"), self.cutfuse(cut2list,"||"))
+        bbox_cuts = base + "&&(!(%s))&&(%s)" % \
+                (self.cutfuse(cut1list,"||"), self.cutfuse(cut2list,"||"))
+        cbox_cuts = base + "&&(%s)&&(!(%s))" % \
+                (self.cutfuse(cut1list,"||"), self.cutfuse(cut2list,"||"))
+        dbox_cuts = base + "&&(%s)&&(%s)" % \
+                (self.cutfuse(cut1list,"||"),self.cutfuse(cut2list,"||"))
+        print(abox_cuts)
+        self.bifurcation_summary["allev"] = ch.GetEntries()
+        self.bifurcation_summary["pass_path"] = ch.GetEntries(base)
+        self.bifurcation_summary["a"] = ch.GetEntries(abox_cuts)
+        self.bifurcation_summary["b"] = ch.GetEntries(bbox_cuts)
+        self.bifurcation_summary["c"] = ch.GetEntries(cbox_cuts)
+        self.bifurcation_summary["d"] = ch.GetEntries(dbox_cuts)
+
+    def cutfuse(self,stringlist,delim):
+        outstring = ""
+        for j,s in enumerate(stringlist):
+            if j == 0:
+                outstring = s
+            else:
+                outstring=outstring+delim+s
+        return outstring
+
+    def FullBifurcateOutput(self,outputdir=None):
+        if outputdir is None:
+            print("Please specify an output directory to save the root file in.")
+            return
         self.bifurcation_rootfile = None
-        bfile = ROOT.TFile(self.save_directory+"/bifurcation_result.ntuple.root","CREATE")
+        bfile = ROOT.TFile(outputdir+"/bifurcation_result.ntuple.root","CREATE")
         b_root = ROOT.TTree("output","Events involved with bifurcation analysis")
         result = ROOT.TTree("boxes","values for a,b,c, and d boxes")
         #Initialize variables to fill with events passing preliminary cuts
@@ -152,6 +200,16 @@ class Bifurcator(object):
             result.Fill() #saves a, b, c, and d
             self.bifurcation_rootfile = bfile
 
+    def SaveBifurcationSummary(self,savedir,savename):
+        savesacloc = savedir+"/"+savename
+        with open(savesacloc,"w") as f:
+            json.dump(self.bifurcation_summary, f, sort_keys=True,indent=4)
+
+    def LoadBifurcationSummary(self,loaddir,filename):
+        loadsacloc = loaddir+"/"+filename
+        with open(loadsacloc,"w") as f:
+            self.bifurcation_summary = json.load(f)
+            
     def SaveBifurcationRoot(self):
         self.bifurcation_rootfile.Write()
         self.bifurcation_rootfile.Close()

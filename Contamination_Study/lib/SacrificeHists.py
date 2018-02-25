@@ -3,13 +3,15 @@
 #Everything united under one master Python code.  
 
 import ROOT
+from ROOT import gDirectory
 import copy
 import os,sys
 
 class SacrificeHistGen(object):
-    def __init__(self, rootfiles=[], config_dict={},sourcetype=None):
+    def __init__(self, rootfiles=[], config_dict={},sourcetype=None,zcut=None):
         self.sourcetype = sourcetype
         self.rootfile_list = rootfiles
+        self.zcut = zcut
         self.nbins = 14
         self.elow = config_dict["E_low"]
         self.ehigh = config_dict["E_high"]
@@ -33,49 +35,48 @@ class SacrificeHistGen(object):
         #We will generate sacrifice histograms for each rootfile loaded in
         #Clears currenet sacrifice_histogram list first
         self.sacrifice_histograms = []
+        basecuts = []
+        basecuts.append("posr<"+str(self.cdict['r_cut']))
+        basecuts.append("energy<"+str(self.cdict['E_high']))
+        basecuts.append("energy>"+str(self.cdict['E_low']))
+        basecuts.append("fitValid==1")
+        basecuts.append("isCal==1")
+        basecuts.append("((dcFlagged&%s)==%s)" % (self.cdict["sacpath_DCmask"],\
+                self.cdict["sacpath_DCmask"]))
+        basecuts.append("((triggerWord&%s)==0)" % (self.cdict["path_trigmask"]))
+        cut1list = []
+        cut1list.append("((dcFlagged&%s)!=%s)" % (self.cdict["cut1_DCmask"],\
+                self.cdict["cut1_DCmask"]))
+        cut1list.append("((triggerWord&%s)!=0)" % (self.cdict["cut1_trigmask"]))
+        cut2list = []
+        cut2list.append("beta14>%s" % (self.cdict["cut2_b14_high"]))
+        cut2list.append("beta14<%s" % (self.cdict["cut2_b14_low"]))
+        cut2list.append("itr<%s" % (self.cdict["cut2_itr_low"]))
+        base = self.cutfuse(basecuts, "&&")
+        b1 = base + "&&(%s)" % self.cutfuse(cut1list,"||")
+        b2 = base + "&&(%s)" % self.cutfuse(cut2list,"||")
         for rf in self.rootfile_list:
             rootfile = ROOT.TFile(rf,"READ")
-            h_AllEvents = ROOT.TH1D("h_AllEvents", "h_AllEvents", self.nbins,
-                    self.elow, self.ehigh)
-            h_cut1_FracFlagged = ROOT.TH1D("h_cut1_FracFlagged", "h_cut1_FracFlagged", self.nbins,self.elow,self.ehigh)
-            h_cut1_FlaggedEvents = ROOT.TH1D("h_cut1_FlaggedEvents", "h_cut1_FlaggedEvents", self.nbins,self.elow,self.ehigh)
-    
-            h_cut2_FlaggedEvents = ROOT.TH1D("h_cut2_FlaggedEvents", "h_cut2_FlaggedEvents", self.nbins,self.elow,self.ehigh)
-    
-            h_cut2_FracFlagged = ROOT.TH1D("h_cut2_FracFlagged", "h_cut2_FracFlagged", self.nbins,self.elow,self.ehigh)
-            h_AllEvents.Sumw2()
-            h_cut1_FracFlagged.Sumw2()
-            h_cut1_FlaggedEvents.Sumw2()
-            h_cut2_FracFlagged.Sumw2()
-            h_cut2_FlaggedEvents.Sumw2()
             #Need the tree that has the data, then xrange it
+            h_cut1_FracFlagged = ROOT.TH1D("h_cut1_FracFlagged", "h_cut1_FracFlagged", self.nbins,self.elow,self.ehigh)
+            h_cut2_FracFlagged = ROOT.TH1D("h_cut2_FracFlagged", "h_cut2_FracFlagged", self.nbins,self.elow,self.ehigh)
             rootfile.cd()
             datatree=rootfile.Get("output")
-            for i in xrange(datatree.GetEntries()):
-                datatree.GetEntry(i)
-                if datatree.posr > self.cdict['r_cut']:
-                    continue
-                if datatree.energy > self.cdict["E_high"] or datatree.energy < \
-                        self.cdict["E_low"]:
-                    continue
-                if datatree.fitValid is False:
-                    continue
-                if datatree.isCal is False:
-                    continue
-                if ((~datatree.dcFlagged) & self.cdict["sacpath_DCmask"]) > 0:
-                    continue
-                if ((datatree.triggerWord) & self.cdict["path_trigmask"]) > 0:
-                    continue
-                h_AllEvents.Fill(datatree.energy);
-                if (((~datatree.dcFlagged) & self.cdict["cut1_DCmask"]) or \
-                        (datatree.triggerWord & self.cdict["cut1_trigmask"])):
-                    h_cut1_FlaggedEvents.Fill(datatree.energy);
-                if ((datatree.beta14 > self.cdict["cut2_b14_high"]) or \
-                        (datatree.beta14 < self.cdict["cut2_b14_low"]) or \
-                        (datatree.itr < self.cdict["cut2_itr_low"])):
-                    h_cut2_FlaggedEvents.Fill(datatree.energy);
-            h_cut1_FracFlagged.Divide(h_cut1_FlaggedEvents,h_AllEvents,1.,1.,"b")
-            h_cut2_FracFlagged.Divide(h_cut2_FlaggedEvents,h_AllEvents,1.,1.,"b")
+            hist_dim = "%d,%f,%f" % (self.nbins,self.elow,self.ehigh)
+            datatree.Draw("energy>>h_AllEvents("+hist_dim+")","isCal==1","goff")
+            h_AllEvents = gDirectory.Get("h_AllEvents")
+            datatree.Draw("energy>>h_AllNonpathEvents("+hist_dim+")",base,"goff")
+            h_AllNonpathEvents = gDirectory.Get("h_AllNonpathEvents")
+            datatree.Draw("energy>>h_cut1_FlaggedEvents("+hist_dim+")",b1,"goff")
+            h_cut1_FlaggedEvents = gDirectory.Get("h_cut1_FlaggedEvents")
+            datatree.Draw("energy>>h_cut2_FlaggedEvents("+hist_dim+")",b2,"goff")
+            h_cut2_FlaggedEvents = gDirectory.Get("h_cut2_FlaggedEvents")
+            h_cut1_FlaggedEvents.Sumw2()
+            h_AllEvents.Sumw2()
+            h_AllNonpathEvents.Sumw2()
+            h_cut2_FlaggedEvents.Sumw2()
+            h_cut1_FracFlagged.Divide(h_cut1_FlaggedEvents,h_AllNonpathEvents,1.,1.,"b")
+            h_cut2_FracFlagged.Divide(h_cut2_FlaggedEvents,h_AllNonpathEvents,1.,1.,"b")
 
             h_cut1_FlaggedEvents.GetXaxis().SetTitle("Energy(MeV)")
             h_cut1_FlaggedEvents.GetYaxis().SetTitle("Events")
@@ -87,13 +88,22 @@ class SacrificeHistGen(object):
             h_cut2_FracFlagged.GetXaxis().SetTitle("Energy(MeV)")
             h_cut2_FracFlagged.GetYaxis().SetTitle("Fractional Sacrifice")
 
-            sachists_thisfile = [copy.deepcopy(h_AllEvents),copy.deepcopy(h_cut2_FracFlagged),
+            sachists_thisfile = [copy.deepcopy(h_AllEvents),copy.deepcopy(h_AllNonpathEvents),
+                    copy.deepcopy(h_cut2_FracFlagged),
                     copy.deepcopy(h_cut2_FlaggedEvents),copy.deepcopy(h_cut1_FracFlagged),
                     copy.deepcopy(h_cut1_FlaggedEvents)]
             self.sacrifice_histograms.append(sachists_thisfile)
-            del h_AllEvents,h_cut1_FracFlagged,h_cut1_FlaggedEvents,h_cut2_FlaggedEvents,\
+            del h_AllEvents,h_AllNonpathEvents,h_cut1_FracFlagged,h_cut1_FlaggedEvents,h_cut2_FlaggedEvents,\
                     h_cut2_FracFlagged
         
+    def cutfuse(self,stringlist,delim):
+        outstring = ""
+        for j,s in enumerate(stringlist):
+            if j == 0:
+                outstring = s
+            else:
+                outstring=outstring+delim+s
+        return outstring
 
     def SaveHistograms(self,savedir):
         self.histogram_files = []
