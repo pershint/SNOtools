@@ -5,7 +5,6 @@
 #chosen configuration of cuts/ROI choice is output.
 import matplotlib.pyplot as plt
 
-import ROOT
 import numpy as np
 import argparse
 import lib.Bifurcator as bi
@@ -58,6 +57,8 @@ ERANGE=args.ERANGE
 JOBNUM=args.JOBNUM
 SOURCE=args.SOURCE
 
+import ROOT
+
 print(SOURCE)
 print(ERANGE)
 
@@ -80,8 +81,8 @@ if __name__ == '__main__':
         ConfigParser = cp.ConfigParser(CONFIGDIR+"/"+CONFIGFILE)
         config_dict = ConfigParser.Load_JsonConfig()
         if ERANGE is not None:
-            config_dict["E_low"] = ERANGE[0]
-            config_dict["E_high"] = ERANGE[1]
+            config_dict["E_low"] = float(ERANGE[0])
+            config_dict["E_high"] = float(ERANGE[1])
         ConfigParser.SaveConfiguration(config_dict,RESULTDIR,"used_configuration.json")
 
     if SACANALYSIS is True:
