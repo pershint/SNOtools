@@ -40,12 +40,12 @@ parser.add_argument('--jobnum', dest='JOBNUM', action='store',
 parser.add_argument('--source', dest='SOURCE', action='store',
         help='Specify the source to use for sacrifice estimation.  Currently'+\
                 'supported: N16 or AmBe')
-parser.add_argument('--erange', dest='ERANGE', action='store',type=float,nargs='+',
+parser.add_argument('--erange', dest='ERANGE', action='store',nargs='+',
         help='Specify an energy range to run all analyses over.  If running'+\
                 '--plots only, will check range matches that in results'+\
                 'directory (usage: --erange 2.0 5.0)')
 parser.set_defaults(SACANALYSIS=False,BIFURCATE=False,debug=False,
-        ESTIMATECONTAMINATION=False,jobnum=0,erange=None,SOURCE='N16')
+        ESTIMATECONTAMINATION=False,JOBNUM=0,PLOTS=False,erange=None,SOURCE='N16')
 args = parser.parse_args()
 
 DEBUG = args.debug
@@ -70,7 +70,7 @@ RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "output","results_j"+str(JOBNU
 if not os.path.exists(RESULTDIR):
     os.makedirs(RESULTDIR)
 DBDIR = os.path.abspath(os.path.join(MAINDIR, "DB"))
-CALIBDIR = '/home/onetrueteal/share/May2016_N16'#os.path.abspath(os.path.join(MAINDIR, "ntuples", "N16"))
+CALIBDIR = os.path.abspath(os.path.join(MAINDIR, "ntuples", "N16"))
 PHYSDIR = os.path.abspath(os.path.join(MAINDIR, "ntuples", "physics_data"))
 CONFIGDIR = os.path.abspath(os.path.join(MAINDIR, 'config'))
 
