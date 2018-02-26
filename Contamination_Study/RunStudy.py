@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 import ROOT
 import numpy as np
+import argparse
 import lib.Bifurcator as bi
 import lib.SacrificeHists as sh
 import lib.plots.SacrificePlots as sp
@@ -22,17 +23,46 @@ import json
 
 #FIXME: set up a simpler argparser here.  you can choose a config file, override
 #some of the configuration values with flags (changes dictionary values), and
-#Could have flags to only run sacrifice, bifurcation, bifurcation analysis, or all.
+parser = argparse.ArgumentParser(description='Parser to decide what analysis to do')
+parser.add_argument('--debug', dest='debug',action='store_true',
+        help='Run code in debug mode')
+parser.add_argument('--sacrifice', dest='SACANALYSIS',action='store_true',
+        help='Run the code that plots the correlations of different cuts/classifiers')
+parser.add_argument('--bifurcate', dest='BIFURCATE',action='store_true',
+        help='Run the bifurcation analysis on physics data.  Saves a bifurcation summary')
+parser.add_argument('--contamination', dest='ESTIMATECONTAMINATION',
+        action='store_true', help='Run the contamination estimation using'+\
+                'bifurcation and sacrifice results.  Save a summary.')
+parser.add_argument('--plots', dest='PLOTS', action='store_true',
+        help='Show plots resulting from sacrifice and contamination studies.  If no sacrifice or contamination study, loads results from the result directory and plots what is available.')
+parser.add_argument('--jobnum', dest='JOBNUM', action='store',
+        help='Specify this jobs number among others.  Will save results'+\
+                'to ./output/results_jN')
+parser.add_argument('--source', dest='SOURCE', action='store',
+        help='Specify the source to use for sacrifice estimation.  Currently'+\
+                'supported: N16 or AmBe')
+parser.add_argument('--erange', dest='ERANGE', action='store',type=float,nargs='+',
+        help='Specify an energy range to run all analyses over.  If running'+\
+                '--plots only, will check range matches that in results'+\
+                'directory (usage: --erange 2.0 5.0)')
+parser.set_defaults(SACANALYSIS=False,BIFURCATE=False,debug=False,
+        ESTIMATECONTAMINATION=False,jobnum=0,erange=None,SOURCE='N16')
+args = parser.parse_args()
+
+DEBUG = args.debug
+PLOTS=args.PLOTS
+SACANALYSIS=args.SACANALYSIS
+BIFURCATE=args.BIFURCATE
+ESTIMATECONTAMINATION=args.ESTIMATECONTAMINATION
+ERANGE=args.ERANGE
+JOBNUM=args.JOBNUM
+SOURCE=args.SOURCE
+
+print(SOURCE)
+print(ERANGE)
+
 CONFIGFILE='cuts_def_oldschool.json'
-JOBNUM=1
 ZCUT=600.0
-SOURCE="N16"
-PLOTS=False
-SACANALYSIS=False
-BIFURCATE=False
-ESTIMATECONTAMINATION=True
-ERANGE=None
-DEBUG=True
 
 MAINDIR = os.path.dirname(__file__)
 RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "output","results_j"+str(JOBNUM)))
