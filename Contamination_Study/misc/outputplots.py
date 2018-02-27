@@ -1,5 +1,87 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import glob
+import json
+
+def PlotContamVsEnergy(DIR):
+    #Gets all contamination results from sub-directories inside parent directory
+    #DIR.  Plots them as a function of energy range as found in used_configuration.json
+    E_lows = []
+    E_highs = []
+    E_mids = []
+    Contamination = []
+    result_dirs = glob.glob(DIR+"*")
+    for d in result_dirs:
+        with open(d+'/used_configuration.json','r') as c:
+            config = json.load(c)
+        with open(d+'/contamination_summary.json','r') as cs:
+            contamsum = json.load(cs)
+        E_lows.append(config['E_low'])
+        E_highs.append(config['E_high'])
+        E_mids.append((config['E_low']+config['E_high'])/2.0)
+        Contamination.append(contamsum['y1y2_to_CL']*contamsum['est_bkg_evts'])
+    E_lows=np.array(E_lows)
+    E_highs=np.array(E_highs)
+    E_mids=np.array(E_mids)
+    Contamination=np.array(Contamination)
+    fig=plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    ax.errorbar(E_mids, Contamination, xerr=(E_lows-E_highs)/2.0, \
+            yerr=0, marker = 'o', markersize=7,linestyle='none',\
+            color='r', alpha=0.8,linewidth=4)
+    ax.set_xlabel("Energy (MeV)")
+    ax.set_ylabel("# Instrumentals in region")
+    ax.set_title("Estimated # Non-cherenkov events that leak through \n"+\
+            "Data cleaning and Fits in 11 days of data taking to 90% CL")
+    ax.grid(True)
+    plt.show()
+
+def PlotContamApproaches(DIR):
+    #Gets all contamination results from sub-directories inside parent directory
+    #DIR.  Plots them as a function of energy range as found in used_configuration.json
+    E_lows = []
+    E_highs = []
+    E_mids = []
+    avg_y1y2 = []
+    CL_y1y2 = []
+    highest_y1y2 = []
+    leastsq_y1y2 = []
+    result_dirs = glob.glob(DIR+"*")
+    for d in result_dirs:
+        with open(d+'/used_configuration.json','r') as c:
+            config = json.load(c)
+        with open(d+'/contamination_summary.json','r') as cs:
+            contamsum = json.load(cs)
+        E_lows.append(config['E_low'])
+        E_highs.append(config['E_high'])
+        E_mids.append((config['E_low']+config['E_high'])/2.0)
+        CL_y1y2.append(contamsum['y1y2_to_CL'])
+        avg_y1y2.append(contamsum['avg_y1y2'])
+        highest_y1y2.append(contamsum['highest_y1y2'])
+        leastsq_y1y2.append(contamsum['leastsq_y1y2'])
+    E_lows=np.array(E_lows)
+    E_highs=np.array(E_highs)
+    E_mids=np.array(E_mids)
+    CL_y1y2=np.array(CL_y1y2)
+    avg_y1y2=np.array(avg_y1y2)
+    highest_y1y2=np.array(highest_y1y2)
+    leastsq_y1y2=np.array(leastsq_y1y2)
+    fig=plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    colors = ['b','r','g','k']
+    labels = ['90% CL','leastsq','highest','average']
+    y1y2s = [CL_y1y2,leastsq_y1y2,highest_y1y2,avg_y1y2]
+    for j,y1y2 in enumerate(y1y2s):
+        ax.errorbar(E_mids, y1y2, xerr=(E_lows-E_highs)/2.0, \
+                yerr=0, marker = 'o', markersize=7,linestyle='none',\
+                color=colors[j], alpha=0.8,linewidth=4,label=labels[j])
+    ax.set_xlabel("Energy (MeV)")
+    ax.set_ylabel("Value for y1*y2")
+    ax.set_title("Values for the product of the leakage fraction for each "+\
+            "bifurcation branch calculated in different ways")
+    ax.grid(True)
+    ax.legend()
+    plt.show()
 
 def PlotRadius(cut_sacrifice_byrun,cut):
     d = cut_sacrifice_byrun[cut]
