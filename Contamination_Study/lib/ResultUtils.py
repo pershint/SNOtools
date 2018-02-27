@@ -12,7 +12,7 @@ def save_calib_list(directory,fullpath_list):
         physics_roots.append(rootname)
     analysis_list = {}
     analysis_list["runs_used_in_bifurcation"] = physics_roots
-    with open(directory+"/physics_list.json","w") as f:
+    with open(directory+"/calibration_run_list.json","w") as f:
         json.dump(analysis_list,f,sort_keys=True,indent=4)
 
 def save_physics_list(directory,fullpath_list):
@@ -25,7 +25,7 @@ def save_physics_list(directory,fullpath_list):
         physics_roots.append(rootname)
     analysis_list = {}
     analysis_list["runs_used_in_bifurcation"] = physics_roots
-    with open(directory+"/physics_list.json","w") as f:
+    with open(directory+"/physics_run_list.json","w") as f:
         json.dump(analysis_list,f,sort_keys=True,indent=4)
 
 def LoadJson(result_directory,filename):

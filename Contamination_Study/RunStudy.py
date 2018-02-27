@@ -133,8 +133,8 @@ if __name__ == '__main__':
         cut_sac_summary = ru.LoadJson(RESULTDIR,"cut_sacrifices_total.json")
         CE = ca.ContaminationEstimator(bifurcation_summary,cut_sac_summary)
         CE.CalculateContaminationValues() #Calculate contamination eqns.
+        values = CE.BootstrapCL(0.90,100000) #Estimate upper end of y1y2
         if PLOTS is True:
-            values = CE.BootstrapCL(0.90,100000) #Estimate upper end of y1y2
             values=values*CE.contamination_summary['est_bkg_evts']
             plt.hist(values,100,range=(min(values),max(values)))
             plt.show()
