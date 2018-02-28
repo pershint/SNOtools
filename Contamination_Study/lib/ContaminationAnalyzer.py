@@ -36,9 +36,28 @@ class ContaminationEstimator(object):
     #Equation 1 of bifur. analysis
     def __y_1(self,a,b,x1,bkg):
         return ((a + b) - x1*a)/bkg
+
+    def __y_1_unc(self,a,b,x1,x1_unc,bkg):
+        #Calculate the uncertainty in y_1
+        t_1 = ((1-x1)*np.sqrt(a))/(bkg)
+        t_2 = (np.sqrt(b)/(bkg))*(1. + ((a + b - (x1*a))/ \
+            (bkg)))
+        t_3 = (x1_unc*a)/(bkg)
+        t_4 = np.sqrt(c + d)*(((a + b) - (x1*a)) / (bkg**2))
+        return np.sqrt((t_1**2)+(t_2**2)+(t_3**2)+(t_4**2))
+
     #Equation 2 of bifur. analysis
     def __y_2(self,a,c,x2,bkg):
         return ((a + c) - x2*a)/bkg
+
+    def __y_2_unc(self,a,c,x2,x2_unc,bkg):
+        #Calculate the uncertainty in y_2
+        t_1 = ((1-x2)*np.sqrt(a))/(bkg)
+        t_2 = (np.sqrt(c)/(bkg))*(1. + ((a + c) - (x2*a))/(bkg))
+        t_3 = (x2_unc*a)/(bkg)
+        t_4 = np.sqrt(b + d)*(((a + c) - (x2*a)) /(bkg**2))
+        return np.sqrt((t_1**2)+(t_2**2)+(t_3**2)+(t_4**2))
+
     #Equation 3 of bifur. analysis
     def __y1y2(self, a, x1, x2, bkg):
         return (a - (x1 * x2 * a))/bkg
