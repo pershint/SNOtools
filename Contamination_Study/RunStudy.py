@@ -23,8 +23,14 @@ import json
 #FIXME: set up a simpler argparser here.  you can choose a config file, override
 #some of the configuration values with flags (changes dictionary values), and
 parser = argparse.ArgumentParser(description='Parser to decide what analysis to do')
+parser.add_argument('--nosave', dest='NOSAVE',action='store_true',
+        help='Do not save any outputs; ensures no writing is done')
 parser.add_argument('--debug', dest='debug',action='store_true',
         help='Run code in debug mode')
+parser.add_argument('--resultdir', dest='RESULTDIR',action='store',
+        type=str,help='specify the location and filename for results to be read'+\
+                'or written to.  No job number support with this. Default is'+\
+                './output/results_j[JOBNUM]')
 parser.add_argument('--sacrifice', dest='SACANALYSIS',action='store_true',
         help='Run the code that plots the correlations of different cuts/classifiers')
 parser.add_argument('--bifurcate', dest='BIFURCATE',action='store_true',
@@ -44,11 +50,13 @@ parser.add_argument('--erange', dest='ERANGE', action='store',nargs='+',
         help='Specify an energy range to run all analyses over.  If running'+\
                 '--plots only, will check range matches that in results'+\
                 'directory (usage: --erange 2.0 5.0)')
-parser.set_defaults(SACANALYSIS=False,BIFURCATE=False,debug=False,
-        ESTIMATECONTAMINATION=False,JOBNUM=0,PLOTS=False,erange=None,SOURCE='N16')
+parser.set_defaults(NOSAVE=False,SACANALYSIS=False,BIFURCATE=False,debug=False,
+        ESTIMATECONTAMINATION=False,JOBNUM=0,PLOTS=False,erange=None,SOURCE='N16',
+        RESULTDIR=None)
 args = parser.parse_args()
 
 DEBUG = args.debug
+NOSAVE=args.NOSAVE
 PLOTS=args.PLOTS
 SACANALYSIS=args.SACANALYSIS
 BIFURCATE=args.BIFURCATE
@@ -56,17 +64,15 @@ ESTIMATECONTAMINATION=args.ESTIMATECONTAMINATION
 ERANGE=args.ERANGE
 JOBNUM=args.JOBNUM
 SOURCE=args.SOURCE
+RESULTDIR=args.RESULTDIR
 
 import ROOT
-
-print(SOURCE)
-print(ERANGE)
-
 CONFIGFILE='cuts_def_oldschool.json'
 ZCUT=600.0
 
 MAINDIR = os.path.dirname(__file__)
-RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "output","results_j"+str(JOBNUM)))
+if RESULTDIR is None:
+    RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "output","results_j"+str(JOBNUM)))
 if not os.path.exists(RESULTDIR):
     os.makedirs(RESULTDIR)
 DBDIR = os.path.abspath(os.path.join(MAINDIR, "DB"))
@@ -83,7 +89,8 @@ if __name__ == '__main__':
         if ERANGE is not None:
             config_dict["E_low"] = float(ERANGE[0])
             config_dict["E_high"] = float(ERANGE[1])
-        ConfigParser.SaveConfiguration(config_dict,RESULTDIR,"used_configuration.json")
+        if NOSAVE is True:
+            ConfigParser.SaveConfiguration(config_dict,RESULTDIR,"used_configuration.json")
 
     if SACANALYSIS is True:
         N16_roots = glob.glob(CALIBDIR+"/*.ntuple.root")
@@ -96,7 +103,8 @@ if __name__ == '__main__':
         SacHists = sh.SacrificeHistGen(rootfiles=N16_roots,config_dict=config_dict,
                 sourcetype=SOURCE)
         SacHists.GenerateHistograms()
-        SacHists.SaveHistograms(RESULTDIR)
+        if NOSAVE is False:
+            SacHists.SaveHistograms(RESULTDIR)
     
         SacSysUnc = sa.SacrificeSystematics(Sacrifice_Histograms=SacHists,\
                 config_dict=config_dict)
@@ -104,8 +112,9 @@ if __name__ == '__main__':
         SacSysUnc.CalculateSacrifices()
         if DEBUG is True:
             SacSysUnc.ShowSacrificeResults()
-        SacSysUnc.SaveSacrificeByRun(RESULTDIR,"cut_sacrifices_byrun.json")
-        SacSysUnc.SaveSacrificeSummary(RESULTDIR,"cut_sacrifices_total.json")
+        if NOSAVE is False:
+            SacSysUnc.SaveSacrificeByRun(RESULTDIR,"cut_sacrifices_byrun.json")
+            SacSysUnc.SaveSacrificeSummary(RESULTDIR,"cut_sacrifices_total.json")
 
     if PLOTS is True:
        cut_sacrifices = ru.LoadJson(RESULTDIR,"cut_sacrifices_byrun.json")
@@ -124,10 +133,11 @@ if __name__ == '__main__':
         print("PHYS_ROOTS: " + str(physics_roots))
         Bifurcator = bi.Bifurcator(rootfiles=physics_roots,config_dict=config_dict)
         Bifurcator.Bifurcate()
-        Bifurcator.SaveBifurcationSummary(RESULTDIR,"bifurcation_boxes.json")
+        if NOSAVE is False:
+            Bifurcator.SaveBifurcationSummary(RESULTDIR,"bifurcation_boxes.json")
     if PLOTS is True:
         bifurcation_summary = ru.LoadJson(RESULTDIR,"bifurcation_boxes.json")
-        ru.BoxDistribution(bifurcation_summary)
+        bp.BoxDistribution(bifurcation_summary)
     if ESTIMATECONTAMINATION is True:
         bifurcation_summary = ru.LoadJson(RESULTDIR,"bifurcation_boxes.json")
         cut_sac_summary = ru.LoadJson(RESULTDIR,"cut_sacrifices_total.json")
@@ -138,4 +148,5 @@ if __name__ == '__main__':
             values=values*CE.contamination_summary['est_bkg_evts']
             plt.hist(values,100,range=(min(values),max(values)))
             plt.show()
-        CE.SaveContaminationSummary(RESULTDIR,"contamination_summary.json")
+        if NOSAVE is False:
+            CE.SaveContaminationSummary(RESULTDIR,"contamination_summary.json")

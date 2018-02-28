@@ -19,13 +19,13 @@ def BoxDistribution(Bifurcation_boxes):
     plt.colorbar()
     plt.tick_params(axis='both', which='both', bottom='off', top='off', \
             labelbottom='off', labelleft='off')
-    plt.text(0.0, 0.0, str(int(BifurAnalysis.b)), size = '20', \
+    plt.text(0.0, 0.0, str(Bifurcation_boxes['b']), size = '20', \
             backgroundcolor='white')
-    plt.text(1.0, 0.0, str(int(BifurAnalysis.d)), size = '20', \
+    plt.text(1.0, 0.0, str(Bifurcation_boxes['d']), size = '20', \
             backgroundcolor='white')
-    plt.text(1.0, 1.0, str(int(BifurAnalysis.c)), size = '20', \
+    plt.text(1.0, 1.0, str(Bifurcation_boxes['c']), size = '20', \
             backgroundcolor='white')
-    plt.text(0.0, 1.0, str(int(BifurAnalysis.a)), size = '20', \
+    plt.text(0.0, 1.0, str(Bifurcation_boxes['a']), size = '20', \
             backgroundcolor='white')
     plt.xlabel("Data Cleaning Branch (PASS | FAIL)")
     plt.ylabel("Fit Classifier Branch (PASS | FAIL)")
