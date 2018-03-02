@@ -7,15 +7,6 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 import argparse
-import lib.Bifurcator as bi
-import lib.SacrificeHists as sh
-import lib.plots.SacrificePlots as sp
-import lib.plots.BifurPlots as bp
-import lib.SacrificeAnalyzer as sa
-import lib.ContaminationAnalyzer as ca
-import lib.ConfigParser as cp
-import lib.CalibSelector as cs
-import lib.ResultUtils as ru
 import os,sys
 import glob
 import json
@@ -27,10 +18,12 @@ parser.add_argument('--nosave', dest='NOSAVE',action='store_true',
         help='Do not save any outputs; ensures no writing is done')
 parser.add_argument('--debug', dest='debug',action='store_true',
         help='Run code in debug mode')
+parser.add_argument('--jobnum', dest='JOBNUM', action='store',
+        help='Specify this jobs number among others.  Will save results'+\
+                'to ./output/results_jN')
 parser.add_argument('--resultdir', dest='RESULTDIR',action='store',
         type=str,help='specify the location and filename for results to be read'+\
-                'or written to.  No job number support with this. Default is'+\
-                './output/results_j[JOBNUM]')
+                'or written to.  No job number support with this flag called.')
 parser.add_argument('--sacrifice', dest='SACANALYSIS',action='store_true',
         help='Run the code that plots the correlations of different cuts/classifiers')
 parser.add_argument('--bifurcate', dest='BIFURCATE',action='store_true',
@@ -40,9 +33,6 @@ parser.add_argument('--contamination', dest='ESTIMATECONTAMINATION',
                 'bifurcation and sacrifice results.  Save a summary.')
 parser.add_argument('--plots', dest='PLOTS', action='store_true',
         help='Show plots resulting from sacrifice and contamination studies.  If no sacrifice or contamination study, loads results from the result directory and plots what is available.')
-parser.add_argument('--jobnum', dest='JOBNUM', action='store',
-        help='Specify this jobs number among others.  Will save results'+\
-                'to ./output/results_jN')
 parser.add_argument('--source', dest='SOURCE', action='store',
         help='Specify the source to use for sacrifice estimation.  Currently'+\
                 'supported: N16 or AmBe')
@@ -67,7 +57,17 @@ SOURCE=args.SOURCE
 RESULTDIR=args.RESULTDIR
 
 import ROOT
-CONFIGFILE='cuts_def_oldschool.json'
+import lib.Bifurcator as bi
+import lib.SacrificeHists as sh
+import lib.plots.SacrificePlots as sp
+import lib.plots.BifurPlots as bp
+import lib.SacrificeAnalyzer as sa
+import lib.ContaminationAnalyzer as ca
+import lib.ConfigParser as cp
+import lib.CalibSelector as cs
+import lib.ResultUtils as ru
+
+CONFIGFILE='cuts_default.json'
 ZCUT=600.0
 
 MAINDIR = os.path.dirname(__file__)
@@ -147,6 +147,10 @@ if __name__ == '__main__':
         if PLOTS is True:
             values=values*CE.contamination_summary['est_bkg_evts']
             plt.hist(values,100,range=(min(values),max(values)))
+            plt.xlabel(r"Total estimated contamination (y1y2$\beta$)")
+            plt.ylabel(r"Relative probability (unitless)")
+            plt.title("Distribution of estimated contamination after\n"+\
+                    "re-firing variables with statistical uncertainties")
             plt.show()
         if NOSAVE is False:
             CE.SaveContaminationSummary(RESULTDIR,"contamination_summary.json")

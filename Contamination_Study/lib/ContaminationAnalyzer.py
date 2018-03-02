@@ -69,27 +69,47 @@ class ContaminationEstimator(object):
     def highest_y1y2(self,a,b,c,x1,x2,bkg):
         eqn3 = self.__y1y2(a, x1, x2, bkg)
         eqn12 = self.__y_1(a,b,x1,bkg)*self.__y_2(a,c,x2,bkg)
-        if eqn3 > eqn12:
-            return eqn3
+        if type(eqn3) is np.ndarray:
+            result = []
+            for j, val in enumerate(eqn3):
+                if val > eqn12[j]:
+                    result.append(val)
+                else:
+                    result.append(eqn12[j])
+            return np.array(result)
         else:
-            return eqn12 
+            if eqn3 > eqn12:
+                return eqn3
+            else:
+                return eqn12 
 
     def leastsq_y1y2(self,a,b,c,x1,x2,bkg):
         phi_1 = self.__y1y2(a,x1,x2,bkg)
         phi_2 = self.__y_1(a,b,x1,bkg) * self.__y_2(a,c,x2,bkg)
-        if phi_1 == 0:
-            print("THE y1y2 TERM IS ZERO.  ASSUMING THE PRODUCT IS THE OTHER")
-            print("TERM BECAUSE THE LEAST SQUARES SOLUTION IS INVALID")
-            return phi_2
-        if phi_2 == 0:
-            print("EQNS. 1 OR 2 ARE ZERO.  ASSUMING THE PRODUCT IS THE OTHER")
-            print("TERM BECAUSE THE LEAST SQUARES SOLUTION IS INVALID")
-            return phi_1
-        #Now, we have two equations: p1 - y1y2 = 0, and p2 - y1y2 = 0
-        #The analytical solution for the sum of the squares will give the
-        #"least wrong" value for y1y2. Ignore the imaginary if you're solving
-        #directly...
-        return (phi_2*phi_1**2 + phi_1*phi_2**2)/(phi_1**2 + phi_2**2)
+        if type(phi_1) is np.ndarray:
+            result =(phi_2*phi_1**2 + phi_1*phi_2**2)/(phi_1**2 + phi_2**2)
+            for j, val in enumerate(result):
+                if val == 0:
+                    #Take the higher of the two values
+                    if phi_1[j] > phi_2[j]:
+                        result[j] = phi_1[j]
+                    else:
+                        result[j] = phi_2[j]
+            return result
+        else:
+            if phi_1 == 0:
+                print("THE y1y2 TERM IS ZERO.  ASSUMING THE PRODUCT IS THE OTHER")
+                print("TERM BECAUSE THE LEAST SQUARES SOLUTION IS INVALID")
+                return phi_2
+            if phi_2 == 0:
+                print("EQNS. 1 OR 2 ARE ZERO.  ASSUMING THE PRODUCT IS THE OTHER")
+                print("TERM BECAUSE THE LEAST SQUARES SOLUTION IS INVALID")
+                return phi_1
+            #Now, we have two equations: p1 - y1y2 = 0, and p2 - y1y2 = 0
+            #The analytical solution for the sum of the squares will give the
+            #"least wrong" value for y1y2. Ignore the imaginary if you're solving
+            #directly...
+            return (phi_2*phi_1**2 + phi_1*phi_2**2)/(phi_1**2 + phi_2**2)
 
     def BootstrapCL(self,CL,n):
         #Using the bifurcation boxes as averages, shoot values for a,b,c, and d
