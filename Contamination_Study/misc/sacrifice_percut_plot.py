@@ -89,7 +89,11 @@ def SacVSNHit_Plot(allcutsacs,topcuts=None):
     sns.set_palette(sns.xkcd_palette(xkcd_colors))#,len(allcutsacs)))
     if topcuts is None:
         for cut in allcutsacs:
-            plt.errorbar(x=allcutsacs[cut].nhit, y=allcutsacs[cut].fEractional_sacrifice, yerr=allcutsacs[cut].fs_uncertainty, linestyle='none', marker='+', label=cut, markersize=8)
+            plt.errorbar(x=allcutsacs[cut].nhit, 
+                    y=allcutsacs[cut].fEractional_sacrifice,
+                    yerr=allcutsacs[cut].fs_uncertainty,
+                    linestyle='none', marker='+', label=cut, markersize=8,
+                    elinewidth=2, capsize=0)
     else:
         fracsum,fracuncsum=[],[]
         for cut in allcutsacs:

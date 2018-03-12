@@ -1,7 +1,10 @@
 import matplotlib.pyplot as plt
+from matplotlib import rc
+import seaborn as sns
 import numpy as np
 import glob
 import json
+
 
 def PlotContamVsEnergy(DIR):
     #Gets all contamination results from sub-directories inside parent directory
@@ -84,11 +87,17 @@ def PlotContamApproaches(DIR):
     plt.show()
 
 def PlotRadius(cut_sacrifice_byrun,cut):
+    sns.set_style("whitegrid")
+    sns.axes_style("whitegrid")
+    xkcd_colors = ['slate blue', 'fluro green', 'twilight', 'blue',
+            'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
+            'aqua blue','vomit', 'black','yellowgreen']
     d = cut_sacrifice_byrun[cut]
     if cut == 'cut1':
-        col = 'b'
+        colors = ['slate blue']
     if cut == 'cut2':
-        col = 'r'
+        colors = ['leaf']
+    sns.set_palette(sns.xkcd_palette(colors))#,len(allcutsacs)))
     fs, radius, fs_u = [], [], []
     for j,posn in enumerate(d['position']):
         if posn[2] >600.0:
@@ -97,27 +106,39 @@ def PlotRadius(cut_sacrifice_byrun,cut):
         radius.append(np.sqrt(posn[0]**2 + posn[1]**2 + posn[2]**2))
         fs_u.append(d['fractional_sac_unc'][j])
     fs = np.array(fs)
-    radius = np.array(radius)
+    r3R3 = np.array(radius)**3/np.full(len(radius),600)**3
     fs_u = np.array(fs_u)
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     ax.errorbar(radius,fs,yerr=fs_u,xerr=0,marker='o',markersize=8,
-            color=col,linestyle='none')
-    ax.set_xlabel("Radial position of source (cm)",fontsize=16)
-    ax.set_ylabel("Fractional sacrifice",fontsize=16)
-    ax.set_title("Fractional sacrifice for "+cut+" branch as radial position of"+\
-            " source varies",fontsize=18)
+            linestyle='none',elinewidth=3, capsize=0)
+    plt.tick_params(labelsize=20)
+    plt.yscale('log')
+    ax.set_xlabel(r'$R_{s}^{3}/R_{AV}^{3}$',fontsize=22)
+    ax.set_ylabel("Fractional sacrifice",fontsize=22)
+    if cut == 'cut1':
+        clabel = 'Data Cleaning'
+    if cut == 'cut2':
+        clabel = 'Fit Classifier'
+    ax.set_title("Fractional sacrifice for "+clabel+" as radial position of"+\
+            " source varies",fontsize=24)
     plt.grid(True)
     print("AVERAGE VALUE: " + str(np.average(fs)))
     print("STD DEV.: " + str(np.std(fs)))
     plt.show()
 
 def PlotAxis(cut_sacrifice_byrun,cut,axis):
+    sns.set_style("whitegrid")
+    sns.axes_style("whitegrid")
+    xkcd_colors = ['slate blue', 'fluro green', 'twilight', 'blue',
+            'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
+            'aqua blue','vomit', 'black','yellowgreen']
     d = cut_sacrifice_byrun[cut]
     if cut == 'cut1':
-        col = 'b'
+        colors = ['slate blue']
     if cut == 'cut2':
-        col = 'r'
+        colors = ['leaf']
+    sns.set_palette(sns.xkcd_palette(colors))#,len(allcutsacs)))
     fs, posns, fs_u = [], [], []
     for j,posn in enumerate(d['position']):
         if posn[2] > 600.0:
@@ -139,23 +160,35 @@ def PlotAxis(cut_sacrifice_byrun,cut,axis):
     fs_u = np.array(fs_u)
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
-    ax.errorbar(posns,fs,yerr=fs_u,xerr=0,marker='o',markersize=8,
-            color=col,linestyle='none')
-    ax.set_xlabel("Position of source on "+axis+"-axis (cm)",fontsize=16)
-    ax.set_ylabel("Fractional sacrifice",fontsize=16)
-    ax.set_title("Fractional sacrifice for "+cut+" branch as "+axis+"-position of"+\
-            " source varies",fontsize=18)
+    if cut == 'cut1':
+        clabel = 'Data Cleaning'
+    if cut == 'cut2':
+        clabel = 'Fit Classifier'
+    plt.tick_params(labelsize=18)
+    plt.yscale('log')
+    ax.errorbar(posns,fs,yerr=fs_u,xerr=0,marker='o',markersize=5,
+            linestyle='none',elinewidth=3,capsize=0)
+    ax.set_xlabel("Position of source on "+axis+"-axis (cm)",fontsize=22)
+    ax.set_ylabel("Fractional sacrifice",fontsize=22)
+    ax.set_title("Fractional sacrifice for "+clabel+" as "+axis+"-position of"+\
+            " source varies",fontsize=24)
     plt.grid(True)
     print("AVERAGE VALUE: " + str(np.average(fs)))
     print("STD DEV.: " + str(np.std(fs)))
     plt.show()
 
 def PlotSys(cut_sacrifice_byrun,cut,axis):
+    sns.set_style("whitegrid")
+    sns.axes_style("whitegrid")
+    xkcd_colors = ['slate blue', 'fluro green', 'twilight', 'blue',
+            'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
+            'aqua blue','vomit', 'black','yellowgreen']
     d = cut_sacrifice_byrun[cut]
     if cut == 'cut1':
-        col = 'b'
+        colors = ['twilight']
     if cut == 'cut2':
-        col = 'r'
+        colors = ['leaf']
+    sns.set_palette(sns.xkcd_palette(colors))#,len(allcutsacs)))
     fs, posns, fs_u = [], [], []
     for j,posn in enumerate(d['position']):
         if posn[2] > 600.0:
@@ -183,12 +216,18 @@ def PlotSys(cut_sacrifice_byrun,cut,axis):
     fs_u = np.array(fs_u)
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
+    if cut == 'cut1':
+        clabel = 'Data Cleaning'
+    if cut == 'cut2':
+        clabel = 'Fit Classifier'
+    plt.tick_params(labelsize=18)
+    plt.yscale('log')
     ax.errorbar(posns,fs,yerr=fs_u,xerr=0,marker='o',markersize=8,
-            color=col,linestyle='none')
-    ax.set_xlabel("Position of source on "+axis+"-axis (cm)",fontsize=16)
-    ax.set_ylabel("Fractional sacrifice",fontsize=16)
-    ax.set_title("Fractional sacrifice for "+cut+" branch as "+axis+"-position of"+\
-            " source varies",fontsize=18)
+            linestyle='none',elinewidth=4,capsize=0)
+    ax.set_xlabel("Position of source on "+axis+"-axis (cm)",fontsize=22)
+    ax.set_ylabel("Fractional sacrifice",fontsize=22)
+    ax.set_title("Fractional sacrifice for "+clabel+" as "+axis+"-position of"+\
+            " source varies",fontsize=24)
     plt.grid(True)
     print("AVERAGE VALUE: " + str(np.average(fs)))
     print("STD DEV.: " + str(np.std(fs)))
