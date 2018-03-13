@@ -55,7 +55,6 @@ class SacrificeSystematics(object):
             self.sacrifice_summary[cut]["total_fracsac"] = 0.0
             self.sacrifice_summary[cut]["total_fracsac_unc"] = 0.0
             self.cut_sacrifices[cut]["position"] = []
-            #FIXME: Need to address if a run has subruns (just append)
             self.cut_sacrifices[cut]["run"] = []
             self.cut_sacrifices[cut]["total_events"] = []
             self.cut_sacrifices[cut]["events_flagged"] = []
@@ -76,21 +75,42 @@ class SacrificeSystematics(object):
                     for cut in ['cut1','cut2']:
                         h_cutflagged = copy.deepcopy(_file0.Get("h_"+cut+"_FlaggedEvents"))
                         cut_numflagged= float(h_cutflagged.GetEntries())
-                        cut_fractional_sac = ( cut_numflagged / numnonpath)
-                        cut_frac_sac_unc = np.sqrt((np.sqrt(cut_numflagged) /\
-                                numnonpath)**2+((cut_numflagged*np.sqrt(numnonpath))/(numnonpath**2))**2)
                         self.sacrifice_summary[cut]["total_events"]+=numall
                         self.sacrifice_summary[cut]["nonpath_events"]+=numnonpath
-                        self.cut_sacrifices[cut]["run"].append(int(run))
-                        self.cut_sacrifices[cut]["total_events"].append(numall)
-                        self.cut_sacrifices[cut]["nonpath_events"].append(numnonpath)
                         self.sacrifice_summary[cut]["total_evtsflagged"]+=cut_numflagged
-                        self.cut_sacrifices[cut]["position"].append(position)
-                        self.cut_sacrifices[cut]["events_flagged"].append(cut_numflagged)
-                        self.cut_sacrifices[cut]["fractional_sac_unc"].append(cut_frac_sac_unc)
-                        self.cut_sacrifices[cut]["fractional_sac"].append(cut_fractional_sac)
-        #Calculate the total fractional acceptance and uncertainty now
+                        if int(run) in self.cut_sacrifices[cut]["run"]:
+                            #Have a subrun; add into the previous run's contents
+                            #Get the index where self.cut_sacrifices[cut]["run"] == run
+                            currentruns = np.array(self.cut_sacrifices[cut]["run"])
+                            print("CURRENTRUNS: " + str(currentruns))
+                            print("THISRUN: " + str(run))
+                            runindex = np.where(currentruns == int(run))[0]
+                            print(runindex)
+                            runindex = runindex[0]
+                            self.cut_sacrifices[cut]["total_events"][runindex]+=numall
+                            self.cut_sacrifices[cut]["nonpath_events"][runindex]+=numnonpath
+                            self.cut_sacrifices[cut]["events_flagged"][runindex]+=\
+                                    cut_numflagged
+                        else:
+                            #new run; append all the contents here
+                            self.cut_sacrifices[cut]["run"].append(int(run))
+                            self.cut_sacrifices[cut]["position"].append(position)
+                            self.cut_sacrifices[cut]["total_events"].append(numall)
+                            self.cut_sacrifices[cut]["nonpath_events"].append(numnonpath)
+                            self.cut_sacrifices[cut]["events_flagged"].append(cut_numflagged)
+
+        #Calculate the total fractional acceptance and uncertainty, and
+        #run-by-run sacrifice now
         for cut in ['cut1','cut2']:
+            for j,run in enumerate(self.cut_sacrifices[cut]["run"]):
+                numflagged = self.cut_sacrifices[cut]["events_flagged"][j]
+                numnonpath = self.cut_sacrifices[cut]["nonpath_events"][j]
+                cut_fractional_sac = ( numflagged / numnonpath)
+                cut_frac_sac_unc = np.sqrt((np.sqrt(numflagged) /\
+                        numnonpath)**2+((numflagged*np.sqrt(numnonpath))/(numnonpath**2))**2)
+                self.cut_sacrifices[cut]["fractional_sac_unc"].append(cut_frac_sac_unc)
+                self.cut_sacrifices[cut]["fractional_sac"].append(cut_fractional_sac)
+            #Add fractional sacrifice estimates for all runs investigated
             total = float(self.sacrifice_summary[cut]["nonpath_events"])
             totalflagged = float(self.sacrifice_summary[cut]["total_evtsflagged"])
             self.sacrifice_summary[cut]["total_fracsac"] = totalflagged/total
