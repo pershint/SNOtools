@@ -27,13 +27,16 @@ def SacVSNhit_Data(rootfile,nbins=10,nmin=10.0,nmax=100.0,dcmask=None):
     rf = ROOT.TFile(rootfile,"READ")
     data = rf.Get("output")
     fullmask = mb.get_dcwords()
+    print(fullmask)
     plotmask = {}
     for cut in fullmask:
         if 'prescale' in fullmask[cut]:
             continue
         if 'waterblind' in fullmask[cut]:
             continue
-        if cut&dcmask==cut:
+        if mb.binary_bit_to_int(cut)&dcmask==mb.binary_bit_to_int(cut):
+            print("WE ARE ADDING IN CUT: " + str(cut))
+            print("THAT IS... CUT: " + str(fullmask[cut]))
             plotmask[cut] = fullmask[cut]
     #Now, make a new dictionary object: key is cutname, value is histogram
     data.Draw("nhits>>h_allevents(%i,%f,%f)"% (nbins,nmin,nmax),
@@ -43,12 +46,13 @@ def SacVSNhit_Data(rootfile,nbins=10,nmin=10.0,nmax=100.0,dcmask=None):
     cutnames = ()
     allcutsacs = {}
     for cut in plotmask:
+        cutint = mb.binary_bit_to_int(cut)
         graphdict={}
         nhit, fs,fs_unc =(), (), () #pandas wants ntuples
         h_cut_FracFlagged = ROOT.TH1D("h_cut_FracFlagged", "h_cut_FracFlagged", nbins,nmin,nmax)
         h_cut_FracFlagged.Sumw2()
         data.Draw("nhits>>h_flagged(%i,%f,%f)" % (nbins,nmin,nmax),
-                "((dcFlagged&%i)!=%i)" % (cut,cut),"goff")
+                "((dcFlagged&%i)!=%i)" % (cutint,cutint),"goff")
         h_flagged = gDirectory.Get("h_flagged")
         h_flagged.Sumw2()
         h_cut_FracFlagged.Divide(h_flagged,h_allevents,1.,1.,"b")
@@ -66,7 +70,7 @@ def SacVSNhit_Data(rootfile,nbins=10,nmin=10.0,nmax=100.0,dcmask=None):
    
     return allcutsacs 
 
-def GetTopSacs(allcutsacs,topnumber=5):
+def GetTopSacs(allcutsacs,topnumber=5,dcmask=None):
     if len(allcutsacs) <= topnumber:
         print("You already only have five cuts.  Not combining any")
         return
@@ -83,9 +87,9 @@ def GetTopSacs(allcutsacs,topnumber=5):
 def SacVSNHit_Plot(allcutsacs,topcuts=None):
     sns.set_style("whitegrid")
     sns.axes_style("whitegrid")
-    xkcd_colors = ['slate blue', 'fluro green', 'twilight', 'blue',
+    xkcd_colors = ['slate blue', 'fluro green', 'brown', 'blue',
             'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
-            'aqua blue','vomit', 'black','yellowgreen']
+            'aqua blue','vomit', 'black','twilight']
     sns.set_palette(sns.xkcd_palette(xkcd_colors))#,len(allcutsacs)))
     if topcuts is None:
         for cut in allcutsacs:
