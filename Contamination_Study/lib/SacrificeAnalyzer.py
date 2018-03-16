@@ -72,6 +72,8 @@ class SacrificeSystematics(object):
                     h_all = copy.deepcopy(_file0.Get("h_AllEvents"))
                     numall = float(h_all.GetEntries())
                     numnonpath = float(h_allnonpath.GetEntries())
+                    if numnonpath == 0:
+                        print("RUN %s HAS NO NON-PATHOLOGICAL EVENTS." % (_file0.GetName()))
                     for cut in ['cut1','cut2']:
                         h_cutflagged = copy.deepcopy(_file0.Get("h_"+cut+"_FlaggedEvents"))
                         cut_numflagged= float(h_cutflagged.GetEntries())

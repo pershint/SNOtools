@@ -36,9 +36,16 @@ class SacrificeHistGen(object):
         #Clears currenet sacrifice_histogram list first
         self.sacrifice_histograms = []
         basecuts = []
-        basecuts.append("posr<"+str(self.cdict['r_cut']))
-        basecuts.append("energy<"+str(self.cdict['E_high']))
-        basecuts.append("energy>"+str(self.cdict['E_low']))
+        if self.cdict['r_cut'] is not None:
+            basecuts.append("posr<"+str(self.cdict['r_cut']))
+        if self.cdict['E_high'] is not None: 
+            basecuts.append("energy<"+str(self.cdict['E_high']))
+        if self.cdict['E_low'] is not None: 
+            basecuts.append("energy>"+str(self.cdict['E_low']))
+        if self.cdict['Z_low'] is not None:
+            basecuts.append("posz>"+str(self.cdict['Z_low']*10.0))
+        if self.cdict['Z_high'] is not None:
+            basecuts.append("posz<"+str(self.cdict['Z_high']*10.0))
         basecuts.append("fitValid==1")
         basecuts.append("isCal==1")
         basecuts.append("((dcFlagged&%s)==%s)" % (self.cdict["sacpath_DCmask"],\

@@ -15,14 +15,17 @@ def LoadCalibrationDicts(calibdir,source):
                 all_calibdicts.append(json.load(f))
         return all_calibdicts
 
-def ApplyZCut(calibdir,source,zcutval,filelist):
+def ApplyZCut(calibdir,source,zcutrange,filelist):
         all_calibdicts = LoadCalibrationDicts(calibdir,source)
         trimmed_filelist = []
         for f in filelist:
             for cdict in all_calibdicts:
                 for run in cdict:
                     if run in f:
-                        if cdict[run]['position'][2] < zcutval:
+                        print(cdict[run]['position'][2])
+                        print(zcutrange)
+                        if cdict[run]['position'][2] < float(zcutrange[0]) and \
+                                cdict[run]['position'][2] > float(zcutrange[1]):
                             trimmed_filelist.append(f)
         return trimmed_filelist
                         

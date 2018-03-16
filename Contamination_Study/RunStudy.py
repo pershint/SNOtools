@@ -21,6 +21,8 @@ parser.add_argument('--debug', dest='debug',action='store_true',
 parser.add_argument('--jobnum', dest='JOBNUM', action='store',
         help='Specify this jobs number among others.  Will save results'+\
                 'to ./output/results_jN')
+parser.add_argument('--configfile', dest='CONFIGDIR',action='store',
+        type=str,help='specify the config file that will be used (JSON format)')
 parser.add_argument('--resultdir', dest='RESULTDIR',action='store',
         type=str,help='specify the location and filename for results to be read'+\
                 'or written to.  No job number support with this flag called.')
@@ -40,9 +42,17 @@ parser.add_argument('--erange', dest='ERANGE', action='store',nargs='+',
         help='Specify an energy range to run all analyses over.  If running'+\
                 '--plots only, will check range matches that in results'+\
                 'directory (usage: --erange 2.0 5.0)')
+parser.add_argument('--zrange', dest='ZRANGE', action='store',nargs='+',
+        help='Specify an upper and lower zcut in cm range to perform the analysis'+\
+                'over.  Applied in sacrifice and comtanimation studies.'+\
+                '(usage: --zrange 600 -500)')
+
+MAINDIR = os.path.dirname(__file__)
+CALIBDIR = '/home/onetrueteal/share/May2016_N16_2'#os.path.abspath(os.path.join(MAINDIR, "ntuples", "N16"))
+cfg_default = os.path.abspath(os.path.join(MAINDIR, 'config','cuts_default.json'))
 parser.set_defaults(NOSAVE=False,SACANALYSIS=False,BIFURCATE=False,debug=False,
         ESTIMATECONTAMINATION=False,JOBNUM=0,PLOTS=False,erange=None,SOURCE='N16',
-        RESULTDIR=None)
+        RESULTDIR=None,CONFIGDIR=cfg_default,ZRANGE=None)
 args = parser.parse_args()
 
 DEBUG = args.debug
@@ -52,9 +62,13 @@ SACANALYSIS=args.SACANALYSIS
 BIFURCATE=args.BIFURCATE
 ESTIMATECONTAMINATION=args.ESTIMATECONTAMINATION
 ERANGE=args.ERANGE
+ZRANGE=args.ZRANGE
 JOBNUM=args.JOBNUM
 SOURCE=args.SOURCE
 RESULTDIR=args.RESULTDIR
+CONFIGDIR=args.CONFIGDIR
+
+print("ZRANGE: " + str(ZRANGE))
 
 import ROOT
 import lib.Bifurcator as bi
@@ -67,37 +81,34 @@ import lib.ConfigParser as cp
 import lib.CalibSelector as cs
 import lib.ResultUtils as ru
 
-CONFIGFILE='cuts_default.json'
-ZCUT=600.0
-
-MAINDIR = os.path.dirname(__file__)
 if RESULTDIR is None:
     RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "output","results_j"+str(JOBNUM)))
 if not os.path.exists(RESULTDIR):
     os.makedirs(RESULTDIR)
 DBDIR = os.path.abspath(os.path.join(MAINDIR, "DB"))
-CALIBDIR = os.path.abspath(os.path.join(MAINDIR, "ntuples", "N16"))
 PHYSDIR = os.path.abspath(os.path.join(MAINDIR, "ntuples", "physics_data"))
-CONFIGDIR = os.path.abspath(os.path.join(MAINDIR, 'config'))
 
 if __name__ == '__main__':
     #Get your run files to load
     #Load the configuration file to use
     if SACANALYSIS or BIFURCATE is True:
-        ConfigParser = cp.ConfigParser(CONFIGDIR+"/"+CONFIGFILE)
+        ConfigParser = cp.ConfigParser(CONFIGDIR)
         config_dict = ConfigParser.Load_JsonConfig()
+        if ZRANGE is not None:
+            config_dict["Z_high"] = float(ZRANGE[0])
+            config_dict["Z_low"] = float(ZRANGE[1])
         if ERANGE is not None:
             config_dict["E_low"] = float(ERANGE[0])
             config_dict["E_high"] = float(ERANGE[1])
-        if NOSAVE is True:
+        if NOSAVE is False:
             ConfigParser.SaveConfiguration(config_dict,RESULTDIR,"used_configuration.json")
 
     if SACANALYSIS is True:
         N16_roots = glob.glob(CALIBDIR+"/*.ntuple.root")
         print("LEN OF N16: " + str(len(N16_roots)))
         print("N16_ROOTS: " + str(N16_roots))
-        if ZCUT is not None:
-            N16_roots = cs.ApplyZCut(DBDIR,SOURCE,ZCUT,N16_roots)
+        if ZRANGE is not None:
+            N16_roots = cs.ApplyZCut(DBDIR,SOURCE,ZRANGE,N16_roots)
         print("LEN AFTER ZCUT: " + str(len(N16_roots)))
         ru.save_calib_list(RESULTDIR, N16_roots)       
         SacHists = sh.SacrificeHistGen(rootfiles=N16_roots,config_dict=config_dict,
