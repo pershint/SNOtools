@@ -1,10 +1,18 @@
 import matplotlib.pyplot as plt
 from matplotlib import rc
+import scipy.optimize as spc
 import seaborn as sns
 import numpy as np
 import glob
 import json
 
+def weighted_stdev(vals,valavg, uncs):
+    weights = 1/(uncs**2)
+    return np.sqrt((len(weights)*np.sum(weights*(vals-valavg)**2))/((len(weights)-1)*np.sum(weights)))
+
+
+def flatline(x,b):
+    return b
 
 def PlotContamVsEnergy(DIR):
     #Gets all contamination results from sub-directories inside parent directory
@@ -94,7 +102,7 @@ def PlotRadius(cut_sacrifice_byrun,cut):
             'aqua blue','vomit', 'black','yellowgreen']
     d = cut_sacrifice_byrun[cut]
     if cut == 'cut1':
-        colors = ['slate blue']
+        colors = ['twilight']
     if cut == 'cut2':
         colors = ['leaf']
     sns.set_palette(sns.xkcd_palette(colors))#,len(allcutsacs)))
@@ -180,6 +188,7 @@ def PlotAxis(cut_sacrifice_byrun,cut,axis):
 def PlotSys(cut_sacrifice_byrun,cut,axis):
     sns.set_style("whitegrid")
     sns.axes_style("whitegrid")
+    sns.set_context("poster",font_scale = 2)
     xkcd_colors = ['slate blue', 'fluro green', 'twilight', 'blue',
             'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
             'aqua blue','vomit', 'black','yellowgreen']
@@ -187,7 +196,7 @@ def PlotSys(cut_sacrifice_byrun,cut,axis):
     if cut == 'cut1':
         colors = ['twilight']
     if cut == 'cut2':
-        colors = ['leaf']
+        colors = ['light eggplant']
     sns.set_palette(sns.xkcd_palette(colors))#,len(allcutsacs)))
     fs, posns, fs_u = [], [], []
     for j,posn in enumerate(d['position']):
@@ -214,22 +223,33 @@ def PlotSys(cut_sacrifice_byrun,cut,axis):
     fs = np.array(fs)
     posns = np.array(posns)
     fs_u = np.array(fs_u)
+    #Fit a flat line to the fractional sacrifices
+    popt, pcov = spc.curve_fit(flatline, posns, fs,p0=[np.average(fs)], sigma=fs_u)
+    #one standard deviation
+    print("PCOVARIANCE: " + str(pcov))
+    stdev = np.sqrt(np.diag(pcov))
+    #plot it
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     if cut == 'cut1':
         clabel = 'Data Cleaning'
     if cut == 'cut2':
         clabel = 'Fit Classifier'
-    plt.tick_params(labelsize=18)
+    #plt.tick_params(labelsize=18)
     plt.yscale('log')
-    ax.errorbar(posns,fs,yerr=fs_u,xerr=0,marker='o',markersize=8,
-            linestyle='none',elinewidth=4,capsize=0)
-    ax.set_xlabel("Position of source on "+axis+"-axis (cm)",fontsize=22)
-    ax.set_ylabel("Fractional sacrifice",fontsize=22)
+    ax.errorbar(posns,fs,yerr=fs_u,xerr=0,marker='o',markersize=10,
+            linestyle='none',elinewidth=6,capsize=0, label='Sacrifice by run')
+    ax.axhline(popt, linewidth=3, alpha=0.8, color='k',label= r'fit: $\mu = %f,\sigma = %f$' % (float(popt[0]), float(stdev[0])))
+    ax.set_xlabel("Position of source on "+axis+"-axis (cm)")
+    ax.set_ylabel("Fractional sacrifice")
     ax.set_title("Fractional sacrifice for "+clabel+" as "+axis+"-position of"+\
-            " source varies",fontsize=24)
+            " source varies")
+    plt.legend()
     plt.grid(True)
-    print("AVERAGE VALUE: " + str(np.average(fs)))
-    print("STD DEV.: " + str(np.std(fs)))
+    print("AVERAGE SACRIFICE OF RUNS, NO WEIGHT: " + str(np.average(fs)))
+    print("STD DEV. OF SACRIFICE, NO WEIGHTS: " + str(np.std(fs)))
+    print("BEST FIT SACRIFICE: " + str(popt))
+    print("UNC. OF BEST FIT AVERAGE: " + str(stdev))
+    print("WEIGHTED STDEV: " + str(weighted_stdev(fs,popt[0],fs_u)))
     plt.show()
 
