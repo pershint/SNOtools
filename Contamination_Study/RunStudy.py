@@ -73,8 +73,8 @@ print("ZRANGE: " + str(ZRANGE))
 import ROOT
 import lib.Bifurcator as bi
 import lib.SacrificeHists as sh
-import lib.plots.SacrificePlots as sp
-import lib.plots.BifurPlots as bp
+import plots.SacrificePlots as sp
+import plots.BifurPlots as bp
 import lib.SacrificeAnalyzer as sa
 import lib.ContaminationAnalyzer as ca
 import lib.ConfigParser as cp
