@@ -23,6 +23,14 @@ parser.add_argument('--jobnum', dest='JOBNUM', action='store',
                 'to ./output/results_jN')
 parser.add_argument('--configfile', dest='CONFIGDIR',action='store',
         type=str,help='specify the config file that will be used (JSON format)')
+parser.add_argument('--analysisdir', dest='ANALYSISDIR',action='store',
+        type=str,help='Specify the directory where the analysis files'+\
+                'are stored.  Will read all files ending with .ntuple.root'+\
+                'from the directory. Default: ./ntuples/physics_data/')
+parser.add_argument('--calibdir', dest='CALIBDIR',action='store',
+        type=str,help='Specify the directory where the calibration files'+\
+                'are stored.  Will read all files ending with .ntuple.root'+\
+                'from the directory. Default: ./ntuples/N16/')
 parser.add_argument('--resultdir', dest='RESULTDIR',action='store',
         type=str,help='specify the location and filename for results to be read'+\
                 'or written to.  No job number support with this flag called.')
@@ -48,11 +56,13 @@ parser.add_argument('--zrange', dest='ZRANGE', action='store',nargs='+',
                 '(usage: --zrange 600 -500)')
 
 MAINDIR = os.path.dirname(__file__)
-CALIBDIR = '/home/onetrueteal/share/May2016_N16_2'#os.path.abspath(os.path.join(MAINDIR, "ntuples", "N16"))
+pd_default = os.path.abspath(os.path.join(MAINDIR, "ntuples", "physics_data"))
+cal_default = os.path.abspath(os.path.join(MAINDIR, "ntuples", "N16"))
 cfg_default = os.path.abspath(os.path.join(MAINDIR, 'config','cuts_default.json'))
 parser.set_defaults(NOSAVE=False,SACANALYSIS=False,BIFURCATE=False,debug=False,
         ESTIMATECONTAMINATION=False,JOBNUM=0,PLOTS=False,erange=None,SOURCE='N16',
-        RESULTDIR=None,CONFIGDIR=cfg_default,ZRANGE=None)
+        RESULTDIR=None,CONFIGDIR=cfg_default,ANALYSISDIR=pd_default,
+        CALIBDIR=cal_default,ZRANGE=None)
 args = parser.parse_args()
 
 DEBUG = args.debug
@@ -67,7 +77,8 @@ JOBNUM=args.JOBNUM
 SOURCE=args.SOURCE
 RESULTDIR=args.RESULTDIR
 CONFIGDIR=args.CONFIGDIR
-
+CALIBDIR=args.CALIBDIR
+PHYSDIR=args.ANALYSISDIR
 print("ZRANGE: " + str(ZRANGE))
 
 import ROOT
@@ -86,7 +97,6 @@ if RESULTDIR is None:
 if not os.path.exists(RESULTDIR):
     os.makedirs(RESULTDIR)
 DBDIR = os.path.abspath(os.path.join(MAINDIR, "DB"))
-PHYSDIR = os.path.abspath(os.path.join(MAINDIR, "ntuples", "physics_data"))
 
 if __name__ == '__main__':
     #Get your run files to load
