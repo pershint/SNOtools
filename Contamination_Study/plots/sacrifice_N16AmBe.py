@@ -2,7 +2,6 @@ from ROOT import gDirectory
 import ROOT
 from rat import RAT
 import numpy as np
-import maskbuilder as mb
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas
@@ -14,12 +13,15 @@ def GetAnalysisMask():
     dcmask = RAT.GetDataCleaningWord('analysis_mask')
     return dcmask
 
-def SacVSClass_Data(ambefiles=[],n16files=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcmask=None):
+def PrepData_SacN16AmBe(ambefiles=[],n16files=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcmask=None):
     '''
     Takes in a list of N16 and AmBe root files and plots the sacrifice versus
-    variable chosen for N16, prompts, and delayeds.  '''
+    variable chosen for N16, prompts, and delayeds.  NOTE: AmBe root files are
+    Assumed to have prompt and delayeds paired into IBD candidates with
+    variables labeled like "nhits_p" and "nhits_d" for prompt and delayed'''
+
     n16data = ROOT.TChain("output")
-    for rf in rootfiles:
+    for rf in n16files:
         n16data.Add(rf)
     ambedata = ROOT.TChain("CombinedOutput")
     for af in ambefiles:
@@ -27,17 +29,18 @@ def SacVSClass_Data(ambefiles=[],n16files=[],var="nhits",nbins=10,xmin=10.0,xmax
     #Now, make a new dictionary object: key is cutname, value is histogram
     n16data.Draw("%s>>h_alln16events(%i,%f,%f)"% (var,nbins,xmin,xmax),
             "fitValid==1&&posr<5000&&isCal==1","goff")
-    ambedata.Draw("%s>>h_allambe_p(%i,%f,%f)"% (var,nbins,xmin,xmax),
-            "fitValid_p==1&&posr_p<5000","goff")
-    ambedata.Draw("%s>>h_allambe_d(%i,%f,%f)"% (var,nbins,xmin,xmax),
-            "fitValid_d==1&&posr_d<5000","goff")
     h_alln16events = gDirectory.Get("h_alln16events")
     h_alln16events.Sumw2()
+    ambedata.Draw("%s_p>>h_allambe_p(%i,%f,%f)"% (var,nbins,xmin,xmax),
+            "interevent_time<500000&&fitValid_p==1&&posr_p<5000","goff")
     h_allambe_p = gDirectory.Get("h_allambe_p")
     h_allambe_p.Sumw2()
+    ambedata.Draw("%s_d>>h_allambe_d(%i,%f,%f)"% (var,nbins,xmin,xmax),
+            "interevent_time<500000&&fitValid_d==1&&posr_d<5000","goff")
     h_allambe_d = gDirectory.Get("h_allambe_d")
     h_allambe_d.Sumw2()
-    
+    print("MADE ALL HISTOGRAMS")
+
     allclasssacs = {}
     labeldict = ["AmBe_Prompt","AmBe_Delayed","N16"]
     for dat in labeldict:
@@ -46,15 +49,15 @@ def SacVSClass_Data(ambefiles=[],n16files=[],var="nhits",nbins=10,xmin=10.0,xmax
         h_cut_FracFlagged = ROOT.TH1D("h_cut_FracFlagged", "h_cut_FracFlagged", nbins,xmin,xmax)
         h_cut_FracFlagged.Sumw2()
         if dat == "AmBe_Prompt":
-            n16data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
-                    "fitValid_p==1&&posr_p<5000&&((dcFlagged_p&%s)!=%s)"%(dcmask,dcmask),"goff")
+            ambedata.Draw("%s_p>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
+                    "interevent_time<500000&&fitValid_p==1&&posr_p<5000&&((dcFlagged_p&%s)!=%s)"%(dcmask,dcmask),"goff")
             h_all = h_allambe_p
         if dat == "AmBe_Delayed":
-            ambedata.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
-                    "fitValid_d==1&&posr_d<5000&&((dcFlagged_d&%s)!=%s)"%(dcmask,dcmask),"goff")
+            ambedata.Draw("%s_d>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
+                    "interevent_time<500000&&fitValid_d==1&&posr_d<5000&&((dcFlagged_d&%s)!=%s)"%(dcmask,dcmask),"goff")
             h_all = h_allambe_d
         if dat == "N16":
-            ambedata.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
+            n16data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
                     "fitValid==1&&posr<5000&&isCal==1&&((dcFlagged&%s)!=%s)"%(dcmask,dcmask) ,"goff")
             h_all = h_alln16events
         print("CUT: " + str(dat))
@@ -76,7 +79,10 @@ def SacVSClass_Data(ambefiles=[],n16files=[],var="nhits",nbins=10,xmin=10.0,xmax
 
 
 
-def SacVSVar_Plot(allclasssacs,variable="nhits"):
+def Plot_SacN16AmBe(allclasssacs,variable="nhits"):
+    '''Takes in A dictionary of pandaframes output from PrepData_N16AmBe
+    and plots it with seaborn/matplotlib'''
+
     sns.set_style("whitegrid")
     sns.axes_style("whitegrid")
     xkcd_colors = ['slate blue', 'fluro green', 'brown', 'blue',
@@ -94,7 +100,7 @@ def SacVSVar_Plot(allclasssacs,variable="nhits"):
     plt.ylabel("Fractional sacrifice",fontsize=34)
     plt.xlabel(variable,fontsize=34)
     plt.tick_params(labelsize=32)
-    plt.title("Fractional sacrifice of central tagged N16 and prompt/delayed"+\
+    plt.title("Fractional sacrifice of central tagged N16 and prompt/delayed\n"+\
             "AmBe events with Valid Fit and radius<5 m",fontsize=36)
     plt.ion()
     plt.show()

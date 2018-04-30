@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import pandas
 import time
 
-def EVDist_Data(rootfiles=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcmask=None):
+def PrepData_EVDist(rootfiles=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcmask=None):
     '''
     Takes in a rootfile and returns a PandaFrame object that can be used
     for plotting in matplotlib.  Returns var's event distribution for
@@ -44,7 +44,7 @@ def EVDist_Data(rootfiles=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcmask=No
    
     return distdict 
 
-def EVDist_Plot(distdict):
+def Plot_EVDist(distdict):
     sns.set_style("whitegrid")
     sns.axes_style("whitegrid")
     xkcd_colors = ['purple', 'fluro green', 'brown', 'slate blue',
