@@ -3,14 +3,14 @@
 import json
 
 class ConfigParser(object):
-    def __init__(self, configfileloc):
-        self.configfile = configfileloc
-        print("CONFIGFILE: " + str(self.configfile))
-        self.config_dict = {}
+    def __init__(self, configdir):
+        self.configdir = configdir
+        print("CONFIGFILE: " + str(self.configdir))
 
-    def Parse_ini(self):
+    def Parse_ini(self,filename):
+        '''Parse a .ini file format in current defined self.configidr'''
         configdict = {}
-        with open(self.configfile,"r") as f:
+        with open(self.configdir,"r") as f:
             for line in f:
                 if line.startswith(";"):
                     continue
@@ -23,15 +23,14 @@ class ConfigParser(object):
                 key, value = keyval[0], keyval[1]
                 value.split(";",1)[0].rstrip(" ")
                 configdict[str(key)]=value.rstrip('\n')
-        self.config_dict = configdict
         return configdict
         
-    def Load_JsonConfig(self):
-        with open(self.configfile,"r") as f:
+    def Load_JsonConfig(self,filename):
+        '''Load a json file with the filename in current self.configdir'''
+        with open("%s/%s"%(self.configdir,filename),"r") as f:
             configdict = json.load(f)
-        self.config_dict = configdict
         return configdict
-
+    
     def SaveConfiguration(self,config_dict, savedir,config_outname):
         saveconfigloc = savedir+"/"+config_outname
         with open(saveconfigloc,"w") as f:

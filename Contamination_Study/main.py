@@ -4,66 +4,13 @@
 #the given data physics files.  Finally, an estimate on the contamination for the
 #chosen configuration of cuts/ROI choice is output.
 import matplotlib.pyplot as plt
-
+import lib.ArgParser as ap
 import numpy as np
-import argparse
 import os,sys
 import glob
 import json
 
-#FIXME: set up a simpler argparser here.  you can choose a config file, override
-#some of the configuration values with flags (changes dictionary values), and
-parser = argparse.ArgumentParser(description='Parser to decide what analysis to do')
-parser.add_argument('--nosave', dest='NOSAVE',action='store_true',
-        help='Do not save any outputs; ensures no writing is done')
-parser.add_argument('--debug', dest='debug',action='store_true',
-        help='Run code in debug mode')
-parser.add_argument('--jobnum', dest='JOBNUM', action='store',
-        help='Specify this jobs number among others.  Will save results'+\
-                'to ./output/results_jN')
-parser.add_argument('--configfile', dest='CONFIGDIR',action='store',
-        type=str,help='specify the config file that will be used (JSON format)')
-parser.add_argument('--analysisdir', dest='ANALYSISDIR',action='store',
-        type=str,help='Specify the directory where the analysis files'+\
-                'are stored.  Will read all files ending with .ntuple.root'+\
-                'from the directory. Default: ./ntuples/physics_data/')
-parser.add_argument('--calibdir', dest='CALIBDIR',action='store',
-        type=str,help='Specify the directory where the calibration files'+\
-                'are stored.  Will read all files ending with .ntuple.root'+\
-                'from the directory. Default: ./ntuples/N16/')
-parser.add_argument('--resultdir', dest='RESULTDIR',action='store',
-        type=str,help='specify the location and filename for results to be read'+\
-                'or written to.  No job number support with this flag called.')
-parser.add_argument('--sacrifice', dest='SACANALYSIS',action='store_true',
-        help='Run the code that plots the correlations of different cuts/classifiers')
-parser.add_argument('--bifurcate', dest='BIFURCATE',action='store_true',
-        help='Run the bifurcation analysis on physics data.  Saves a bifurcation summary')
-parser.add_argument('--contamination', dest='ESTIMATECONTAMINATION',
-        action='store_true', help='Run the contamination estimation using'+\
-                'bifurcation and sacrifice results.  Save a summary.')
-parser.add_argument('--plots', dest='PLOTS', action='store_true',
-        help='Show plots resulting from sacrifice and contamination studies.  If no sacrifice or contamination study, loads results from the result directory and plots what is available.')
-parser.add_argument('--source', dest='SOURCE', action='store',
-        help='Specify the source to use for sacrifice estimation.  Currently'+\
-                'supported: N16 or AmBe')
-parser.add_argument('--erange', dest='ERANGE', action='store',nargs='+',
-        help='Specify an energy range to run all analyses over.  If running'+\
-                '--plots only, will check range matches that in results'+\
-                'directory (usage: --erange 2.0 5.0)')
-parser.add_argument('--zrange', dest='ZRANGE', action='store',nargs='+',
-        help='Specify an upper and lower zcut in cm range to perform the analysis'+\
-                'over.  Applied in sacrifice and comtanimation studies.'+\
-                '(usage: --zrange 600 -500)')
-
-MAINDIR = os.path.dirname(__file__)
-pd_default = os.path.abspath(os.path.join(MAINDIR, "ntuples", "physics_data"))
-cal_default = os.path.abspath(os.path.join(MAINDIR, "ntuples", "N16"))
-cfg_default = os.path.abspath(os.path.join(MAINDIR, 'config','cuts_default.json'))
-parser.set_defaults(NOSAVE=False,SACANALYSIS=False,BIFURCATE=False,debug=False,
-        ESTIMATECONTAMINATION=False,JOBNUM=0,PLOTS=False,erange=None,SOURCE='N16',
-        RESULTDIR=None,CONFIGDIR=cfg_default,ANALYSISDIR=pd_default,
-        CALIBDIR=cal_default,ZRANGE=None)
-args = parser.parse_args()
+args = ap.args
 
 DEBUG = args.debug
 NOSAVE=args.NOSAVE
@@ -74,12 +21,9 @@ ESTIMATECONTAMINATION=args.ESTIMATECONTAMINATION
 ERANGE=args.ERANGE
 ZRANGE=args.ZRANGE
 JOBNUM=args.JOBNUM
-SOURCE=args.SOURCE
 RESULTDIR=args.RESULTDIR
-CONFIGDIR=args.CONFIGDIR
 CALIBDIR=args.CALIBDIR
-PHYSDIR=args.ANALYSISDIR
-print("ZRANGE: " + str(ZRANGE))
+PHYSDIR=args.PHYSDIR
 
 import ROOT
 import lib.Bifurcator as bi
@@ -92,6 +36,10 @@ import lib.ConfigParser as cp
 import lib.CalibSelector as cs
 import lib.ResultUtils as ru
 
+basepath = os.path.dirname(__file__)
+MAINDIR = os.path.dirname(__file__)
+CONFIGDIR = os.path.join(MAINDIR,"config")
+
 if RESULTDIR is None:
     RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "output","results_j"+str(JOBNUM)))
 if not os.path.exists(RESULTDIR):
@@ -101,9 +49,10 @@ DBDIR = os.path.abspath(os.path.join(MAINDIR, "DB"))
 if __name__ == '__main__':
     #Get your run files to load
     #Load the configuration file to use
+    ConfigParser = cp.ConfigParser(CONFIGDIR)  
     if SACANALYSIS or BIFURCATE is True:
-        ConfigParser = cp.ConfigParser(CONFIGDIR)
-        config_dict = ConfigParser.Load_JsonConfig()
+        config_dict = ConfigParser.Load_JsonConfig('cuts_default.json')
+        setup_dict = ConfigParser.Load_JsonConfig('setup.json')
         if ZRANGE is not None:
             config_dict["Z_high"] = float(ZRANGE[0])
             config_dict["Z_low"] = float(ZRANGE[1])
@@ -111,18 +60,19 @@ if __name__ == '__main__':
             config_dict["E_low"] = float(ERANGE[0])
             config_dict["E_high"] = float(ERANGE[1])
         if NOSAVE is False:
-            ConfigParser.SaveConfiguration(config_dict,RESULTDIR,"used_configuration.json")
+            ConfigParser.SaveConfiguration(config_dict,RESULTDIR,"used_cutsconfig.json")
 
     if SACANALYSIS is True:
-        N16_roots = glob.glob(CALIBDIR+"/*.ntuple.root")
-        print("NUMBER OF N16 FILES: " + str(len(N16_roots)))
+        SOURCE=setup_dict['CALIBSOURCE']
+        calib_data_all = glob.glob("%s/%s/*.ntuple.root"%(CALIBDIR,SOURCE))
+        print("NUMBER OF N16 FILES: " + str(len(calib_data)))
         if DEBUG is True:
-            print("N16_ROOTS: " + str(N16_roots))
+            print("N16_ROOTS: " + str(calib_data))
         if ZRANGE is not None:
-            N16_roots = cs.ApplyZCut(DBDIR,SOURCE,ZRANGE,N16_roots)
-        print("NUMBER OF FILES AFTER ZCUT: " + str(len(N16_roots)))
-        ru.save_calib_list(RESULTDIR, N16_roots)       
-        SacHists = sh.SacrificeHistGen(rootfiles=N16_roots,config_dict=config_dict,
+            calib_data = cs.ApplyZCut(DBDIR,SOURCE,ZRANGE,calib_data_all)
+        print("NUMBER OF FILES AFTER ZCUT: " + str(len(calib_data)))
+        ru.save_calib_list(RESULTDIR, calib_data)       
+        SacHists = sh.SacrificeHistGen(rootfiles=calib_data,config_dict=config_dict,
                 sourcetype=SOURCE)
         SacHists.GenerateHistograms()
         if NOSAVE is False:
@@ -158,9 +108,11 @@ if __name__ == '__main__':
         Bifurcator.Bifurcate()
         if NOSAVE is False:
             Bifurcator.SaveBifurcationSummary(RESULTDIR,"bifurcation_boxes.json")
+    
     if PLOTS is True:
         bifurcation_summary = ru.LoadJson(RESULTDIR,"bifurcation_boxes.json")
         bp.BoxDistribution(bifurcation_summary)
+    
     if ESTIMATECONTAMINATION is True:
         bifurcation_summary = ru.LoadJson(RESULTDIR,"bifurcation_boxes.json")
         cut_sac_summary = ru.LoadJson(RESULTDIR,"cut_sacrifices_total.json")
