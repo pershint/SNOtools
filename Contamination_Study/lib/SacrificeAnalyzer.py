@@ -84,10 +84,7 @@ class SacrificeSystematics(object):
                             #Have a subrun; add into the previous run's contents
                             #Get the index where self.cut_sacrifices[cut]["run"] == run
                             currentruns = np.array(self.cut_sacrifices[cut]["run"])
-                            print("CURRENTRUNS: " + str(currentruns))
-                            print("THISRUN: " + str(run))
                             runindex = np.where(currentruns == int(run))[0]
-                            print(runindex)
                             runindex = runindex[0]
                             self.cut_sacrifices[cut]["total_events"][runindex]+=numall
                             self.cut_sacrifices[cut]["nonpath_events"][runindex]+=numnonpath

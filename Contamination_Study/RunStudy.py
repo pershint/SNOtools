@@ -115,11 +115,12 @@ if __name__ == '__main__':
 
     if SACANALYSIS is True:
         N16_roots = glob.glob(CALIBDIR+"/*.ntuple.root")
-        print("LEN OF N16: " + str(len(N16_roots)))
-        print("N16_ROOTS: " + str(N16_roots))
+        print("NUMBER OF N16 FILES: " + str(len(N16_roots)))
+        if DEBUG is True:
+            print("N16_ROOTS: " + str(N16_roots))
         if ZRANGE is not None:
             N16_roots = cs.ApplyZCut(DBDIR,SOURCE,ZRANGE,N16_roots)
-        print("LEN AFTER ZCUT: " + str(len(N16_roots)))
+        print("NUMBER OF FILES AFTER ZCUT: " + str(len(N16_roots)))
         ru.save_calib_list(RESULTDIR, N16_roots)       
         SacHists = sh.SacrificeHistGen(rootfiles=N16_roots,config_dict=config_dict,
                 sourcetype=SOURCE)
@@ -151,7 +152,8 @@ if __name__ == '__main__':
     if BIFURCATE is True:
         physics_roots = glob.glob(PHYSDIR+"/*.ntuple.root")
         ru.save_physics_list(RESULTDIR,physics_roots)
-        print("PHYS_ROOTS: " + str(physics_roots))
+        if DEBUG is True:
+            print("PHYS_ROOTS: " + str(physics_roots))
         Bifurcator = bi.Bifurcator(rootfiles=physics_roots,config_dict=config_dict)
         Bifurcator.Bifurcate()
         if NOSAVE is False:

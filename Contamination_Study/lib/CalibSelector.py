@@ -22,8 +22,6 @@ def ApplyZCut(calibdir,source,zcutrange,filelist):
             for cdict in all_calibdicts:
                 for run in cdict:
                     if run in f:
-                        print(cdict[run]['position'][2])
-                        print(zcutrange)
                         if cdict[run]['position'][2] < float(zcutrange[0]) and \
                                 cdict[run]['position'][2] > float(zcutrange[1]):
                             trimmed_filelist.append(f)

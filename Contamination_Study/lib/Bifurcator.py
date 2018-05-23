@@ -39,9 +39,9 @@ class Bifurcator(object):
         basecuts = []
         if self.cdict['r_cut'] is not None:
             basecuts.append("posr<"+str(self.cdict['r_cut']))
-        if self.cdit['E_high'] is not None: 
+        if self.cdict['E_high'] is not None: 
             basecuts.append("energy<"+str(self.cdict['E_high']))
-        if self.cdit['E_low'] is not None: 
+        if self.cdict['E_low'] is not None: 
             basecuts.append("energy>"+str(self.cdict['E_low']))
         if self.cdict['Z_low'] is not None:
             basecuts.append("posz>"+str(self.cdict['Z_low']*10.0))
