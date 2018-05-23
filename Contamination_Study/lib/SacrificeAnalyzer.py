@@ -21,11 +21,11 @@ import json
 import ROOT
 import glob
 
-class SacrificeSystematics(object):
-    def __init__(self, Sacrifice_Histograms=None, config_dict = {}):
+class SacrificeHistAnalyzer(object):
+    def __init__(self, Sacrifice_Histograms=None, config_dict = {},source="N/A"):
         self.hist_rootfiles = Sacrifice_Histograms.histogram_files  #All sacrifice root files
         #FIXME: Eventually store this metadata in the histogram files as a tree?
-        self.source = Sacrifice_Histograms.sourcetype
+        self.source = "N/A"
         self.cdict = config_dict
         self.calib_positions = {}
         self.cut_sacrifices = {"sourcetype": self.source}
@@ -100,6 +100,7 @@ class SacrificeSystematics(object):
 
         #Calculate the total fractional acceptance and uncertainty, and
         #run-by-run sacrifice now
+        print(self.cut_sacrifices)
         for cut in ['cut1','cut2']:
             for j,run in enumerate(self.cut_sacrifices[cut]["run"]):
                 numflagged = self.cut_sacrifices[cut]["events_flagged"][j]
@@ -123,16 +124,6 @@ class SacrificeSystematics(object):
         print("SACRIFICE AND UNCERTAINTIES FOR CUT BRANCH 2")
         print(self.sacrifice_summary['cut2'])
 
-    def LoadSacrificeSummary(self,loaddir,filename):
-        loadsacloc = loaddir+"/"+filename
-        with open(loadsacloc,"w") as f:
-            self.sacrifice_summary = json.load(f)
-
-    def LoadSacrificeeByRun(self,loaddir,filename):
-        loadsacloc = loaddir+"/"+filename
-        with open(loadsacloc,"w") as f:
-            self.cut_sacrifices = json.load(f)
-            
     def SaveSacrificeSummary(self,savedir,savename):
         savesacloc = savedir+"/"+savename
         with open(savesacloc,"w") as f:

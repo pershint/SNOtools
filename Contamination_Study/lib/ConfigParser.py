@@ -5,7 +5,7 @@ import json
 class ConfigParser(object):
     def __init__(self, configdir):
         self.configdir = configdir
-        print("CONFIGFILE: " + str(self.configdir))
+        print("CONFIGDIRECTORY: " + str(self.configdir))
 
     def Parse_ini(self,filename):
         '''Parse a .ini file format in current defined self.configidr'''

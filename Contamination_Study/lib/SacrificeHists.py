@@ -8,10 +8,8 @@ import copy
 import os,sys
 
 class SacrificeHistGen(object):
-    def __init__(self, rootfiles=[], config_dict={},sourcetype=None,zcut=None):
-        self.sourcetype = sourcetype
+    def __init__(self, rootfiles=[], config_dict={}):
         self.rootfile_list = rootfiles
-        self.zcut = zcut
         self.nbins = 14
         self.elow = config_dict["E_low"]
         self.ehigh = config_dict["E_high"]
@@ -112,20 +110,22 @@ class SacrificeHistGen(object):
                 outstring=outstring+delim+s
         return outstring
 
-    def SaveHistograms(self,savedir):
+    def SaveHistograms(self,savedir=None):
+        if savedir is None:
+            print("No save directory given.  Not saving histograms")
+            return
         self.histogram_files = []
         for j,rf in enumerate(self.rootfile_list):
             outfilename=rf.split("/")
             print("ROOTFILE,SPLIT IN ARRAY" + str(outfilename))
             outfilename=outfilename[len(outfilename)-1].rstrip(".root")+"_sachists.root"
             print("OUTFILENAME: " + outfilename)
-            outfiledir=savedir+"/sachists"
-            if not os.path.exists(outfiledir):
-                os.makedirs(outfiledir)
-            outfile = ROOT.TFile(outfiledir+"/"+outfilename,"CREATE")
+            if not os.path.exists(savedir):
+                os.makedirs(savedir)
+            outfile = ROOT.TFile(savedir+"/"+outfilename,"CREATE")
             for histogram in self.sacrifice_histograms[j]:
                 outfile.Add(histogram)
             outfile.Write()
             outfile.Close()
-            self.histogram_files.append(outfiledir+"/"+outfilename)
+            self.histogram_files.append(savedir+"/"+outfilename)
 

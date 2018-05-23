@@ -21,8 +21,6 @@ class ContaminationEstimator(object):
         self.c = Bifurcation_Summary['c']
         self.d = Bifurcation_Summary['d']
 
-        #Assume that all events in b, c, and d are background
-        self.bkg_events = self.b + self.c + self.d
 
         self.x1 = 1.0 - Sacrifice_Summary['cut1']['total_fracsac']
         self.x2 = 1.0 - Sacrifice_Summary['cut2']['total_fracsac']
@@ -38,7 +36,73 @@ class ContaminationEstimator(object):
         with open(savesacloc,"w") as f:
             json.dump(self.contamination_summary, f, sort_keys=True,indent=4)
     #Equation 1 of bifur. analysis
+
+class LowEContamination(ContaminationEstimator):
+    '''Contamination estimate that requires an estimate on the
+    number of signal events in the a-box'''
+    def __init__(self, Bifurcation_Summary=None, Sacrifice_Summary=None,sigdict=None):
+        super(LowEContamination,self).__init__(Bifurcation_Summary=Bifurcation_Symmary,
+                Sacrifice_Summary=Sacrifice_Summary)
+        self.signal_estimate = sigdict['signal_events']
+        self.signal_estimate_unc = sigdict['signal_events_unc']
+        self.contamination_summary['type'] = 'LowE'
+
+    def _N1(self):
+        return (self.b - (self.x2*(1.0-self.x1)*self.signal_estimate))
+
+    def _N1_unc(self):
+        n1u = np.sqrt((np.sqrt(b) -(self.x2*(1.0-self.x1)*self.signal_estimate))**2 +\
+                (self.b -(self.x2_unc*(1.0-self.x1)*self.signal_estimate))**2 +\
+                (self.b + (self.x2*self.x1_unc*self.signal_estimate))**2 + \
+                (self.b + (self.x2*(1.0-self.x1)*self.signal_estimate_unc))**2)
+        return n1u
+
+    def _N2_unc(self):
+        n2u = np.sqrt((np.sqrt(c) -(self.x1*(1.0-self.x2)*self.signal_estimate))**2 +\
+                (self.c -(self.x1_unc*(1.0-self.x2)*self.signal_estimate))**2 +\
+                (self.c + (self.x1*self.x2_unc*self.signal_estimate))**2 + \
+                (self.c + (self.x1*(1.0-self.x2)*self.signal_estimate_unc))**2)
+        return n2u
+
+    def _N2(self):
+        return (self.c - (self.x1*(1.0-self.x2)*self.signal_estimate))
     
+    def _D(self):
+        return (self.d - (self.x1*self.x2*self.signal_estimate))
+    def _D_unc(self):
+        Du = np.sqrt((np.sqrt(c) -(self.x1*self.x2*self.signal_estimate))**2 +\
+                (self.d -(self.x1_unc*self.x2*self.signal_estimate))**2 +\
+                (self.d + (self.x1*self.x2_unc*self.signal_estimate))**2 + \
+                (self.d + (self.x1*self.x2*self.signal_estimate_unc))**2)
+        return Du
+
+    def _y1y2B(self):
+        return self._N1 * self._N2 / self._D
+
+    def CalculateContamination(self):
+        '''returns estimated y1y2B value based on bifurcation box values & signal estimate'''
+        y1y2B = self._N1() * self._N2() / self._D() 
+        self.contamination_summary['y1y2B']
+        return y1y2B
+
+    def CalculateContaminationUnc(self):
+        y1y2B_unc = self._y1y2B() * np.sqrt((self._N1_unc()/self._N1())**2 + \
+                (self._N2_unc()/self._N2())**2 + (self._D_unc()/self._D()))
+        self.contamination_summary['y1y2B_unc']
+        return y1y2B_unc
+
+
+class NDContamination(ContaminationEstimator):
+    '''Contamination estimate that does not require an estimate on the
+    number of signal events in the a-box'''
+
+    def __init__(self, Bifurcation_Summary=None, Sacrifice_Summary=None):
+        super(NDContamination,self).__init__(Bifurcation_Summary=Bifurcation_Summary,
+                Sacrifice_Summary=Sacrifice_Summary)
+        self.contamination_summary['type'] = 'NucleonDecayROI'
+        #Assume that all events in b, c, and d are background
+        self.bkg_events = self.b + self.c + self.d
+
     def _y_1(self,a,b,x1,bkg):
         return ((a + b) - x1*a)/bkg
 
@@ -70,7 +134,6 @@ class ContaminationEstimator(object):
     def _avg_y1y2(self,a,b,c,x1,x2,bkg):
         return (self._y1y2(a,x1,x2,bkg) + self._y_1(a,b,x1,bkg)*self._y_2(a,c,x2,bkg))/2.0
 
-    #FIXME: Need to have these be functional fills
     def _highest_y1y2(self,a,b,c,x1,x2,bkg):
         eqn3 = self._y1y2(a, x1, x2, bkg)
         eqn12 = self._y_1(a,b,x1,bkg)*self._y_2(a,c,x2,bkg)
@@ -155,10 +218,10 @@ class ContaminationEstimator(object):
                 self.x2,self.bkg_events)
         self.contamination_summary["y1*y2"] = self._y1y2(self.a,self.x1,\
                 self.x2,self.bkg_events)
-        self.contamination_summary["_highest_y1y2"] = self._highest_y1y2(self.a,\
+        self.contamination_summary["highest_y1y2"] = self._highest_y1y2(self.a,\
                 self.b,self.c,self.x1,self.x2,self.bkg_events)
-        self.contamination_summary["_leastsq_y1y2"] = self._leastsq_y1y2(self.a,\
+        self.contamination_summary["leastsq_y1y2"] = self._leastsq_y1y2(self.a,\
                 self.b,self.c,self.x1,self.x2,self.bkg_events)
-        self.contamination_summary["_avg_y1y2"] = self._avg_y1y2(self.a,
+        self.contamination_summary["avg_y1y2"] = self._avg_y1y2(self.a,
                 self.b,self.c,self.x1,self.x2,self.bkg_events)
         self.contamination_summary["est_bkg_evts"] = self.bkg_events
