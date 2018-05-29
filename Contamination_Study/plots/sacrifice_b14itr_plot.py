@@ -86,7 +86,6 @@ def PrepData_ClassSac(rootfiles=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcm
 def Plot_ClassSac(allclasssacs,meta={"binwidth":10.0, "variable":"nhits"},
         fittotal=True):
     sns.set_style("whitegrid")
-    sns.axes_style("whitegrid")
     xkcd_colors = ['slate blue', 'black', 'brown', 'blue',
             'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
             'aqua blue','vomit', 'black','twilight']

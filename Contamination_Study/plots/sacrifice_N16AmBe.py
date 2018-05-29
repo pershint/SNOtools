@@ -84,7 +84,6 @@ def Plot_SacN16AmBe(allclasssacs,variable="nhits"):
     and plots it with seaborn/matplotlib'''
 
     sns.set_style("whitegrid")
-    sns.axes_style("whitegrid")
     xkcd_colors = ['slate blue', 'fluro green', 'brown', 'blue',
             'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
             'aqua blue','vomit', 'black','twilight']

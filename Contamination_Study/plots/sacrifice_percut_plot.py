@@ -101,7 +101,6 @@ def GetTopSacs(allcutsacs,topnumber=5,dcmask=None):
 
 def SacVSVar_Plot(allcutsacs,topcuts=None,metadata={"binwidth":10.0,"variable":"nhits"},fittotal=True):
     sns.set_style("whitegrid")
-    sns.axes_style("whitegrid")
     xkcd_colors = ['black','slate blue', 'fluro green', 'brown', 'blue',
             'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'leaf',
             'aqua blue','vomit', 'red','twilight']
