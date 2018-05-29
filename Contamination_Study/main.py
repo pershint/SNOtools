@@ -69,14 +69,14 @@ if __name__ == '__main__':
         if DEBUG is True:
             print("MONTECARLO_ROOTS: " + str(mc_data_all))
         ru.save_sacrifice_list(RESULTDIR, mc_data_all,"sacestimate_mcfiles.json")
-        SacHists = sh.SacrificeHistGen(rootfiles=mc_data_all,config_dict=config_dict)
+        SacHists = sh.SacrificeHistGen(rootfiles=mc_data_all,config_dict=config_dict,
+                source="MC")
         SacHists.GenerateHistograms()
         if NOSAVE is False:
             SacHists.SaveHistograms(savedir="%s/MC_sachists"%(RESULTDIR))
     
         SacSysUnc = sa.SacrificeHistAnalyzer(Sacrifice_Histograms=SacHists,\
-                config_dict=config_dict,source="Monte Carlo")
-        SacSysUnc.LoadCalibrationPositions(DBDIR)
+                config_dict=config_dict)
         SacSysUnc.CalculateSacrifices()
         if DEBUG is True:
             SacSysUnc.ShowSacrificeResults()
@@ -145,7 +145,7 @@ if __name__ == '__main__':
         if LOWECONTAM is True:
             print("CALCULATING CONTAMINATION ASSUMING LOW ENERGY REGION")
             try:
-                signal_estimate_summary = ru.LoadJson(RESULTDIR,"signal_estimate.json")
+                signal_estimate_summary = ru.LoadJson(RESULTDIR,"MC_cut_sacrifices_total.json")
             except IOError:
                 print("Error loading signal estimate file... does it exist?")
                 raise
