@@ -1,0 +1,32 @@
+
+Description of different cut configuration toggles
+
+###----------PATHOLOGICAL CUTS FOR SACRIFICE/CONTAMINATION-----------###
+Events that are considered pathological are not included in either the
+               sacrifice or contamination studies.
+
+sacpath_DCmask: pathological cuts used to estimate sacrifice
+(this is different than bifurpath because missedmuonfollower is energy biased in N16)
+bifurpath_DCmask: pathological cuts used in making bifurcation boxes
+muon, tpmuonshort&long,junk,ringoffire,zerozero, itc
+path_trigmask: esumhi, esumlo, ped, pgt
+#NOTE: Pathological cuts are NOT applied to Monte Carlo datasets!  So the
+#Number of nonpathological events is the number passing energy/position cuts
+
+###---------CUTS AND TOGGLES FOR SACRIFICE & BIFURCATION PROCESS-----------------###
+fits(dcs)_only: 0 for false, 1 for true
+cut_DCmask: Use rat-tools/DataCleaningTools/dcflags.py to make your mask
+cut_trigmask: default is just OWLEH
+cut_b14, cut_itr defaults: -0.12 < b14 < 0.95, itr<0.55
+
+dcs_only and fits_only usage:
+if dcs_only & fits_only == 0, then branch 1 is specified by cut1_DCmask and cut1_trigmask and
+branch 2 is specified by cut2_b14 and cut2_itr.
+if dcs_only == 1, then branch 1 is specified by cut1_DCmask and cut1_trigmask and
+branch 2 is specified by cut2_DCmask and cut2_trigmask.
+if dcs_only == 2, then branch 1 is specified by cut1_b14 and cut1_itr and
+branch 2 is specified by cut2_itr and cut2_itr.
+
+NOTE: cut1_DCmask and cut1_trigmask are used for the DC part of the sacrifice
+histograms.  cut2_b14 and cut2_itr are used for the Fit parameters that specify
+the sacrifice histograms.
