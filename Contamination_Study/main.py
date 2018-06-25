@@ -23,7 +23,7 @@ ERANGE=args.ERANGE
 ZRANGE=args.ZRANGE
 JOBNUM=args.JOBNUM
 CALIBDIR=args.CALIBDIR
-PHYSDIR=args.PHYSDIR
+ANALYSISDIR=args.ANALYSISDIR
 MCSIGNALDIR=args.MCSIGNALDIR
 
 import ROOT
@@ -86,19 +86,19 @@ if __name__ == '__main__':
 
     if CALIBSACANALYSIS is True:
         CALIBSOURCE=setup_dict['CALIBSOURCE']
-        calib_data_all = glob.glob("%s/%s/*.ntuple.root"%(CALIBDIR,SOURCE))
-        print("NUMBER OF N16 FILES: " + str(len(calib_data_all)))
+        calib_data = glob.glob("%s/%s/*.ntuple.root"%(CALIBDIR,CALIBSOURCE))
+        print("NUMBER OF N16 FILES: " + str(len(calib_data)))
         if DEBUG is True:
-            print("N16_ROOTS: " + str(calib_data_all))
+            print("N16_ROOTS: " + str(calib_data))
         if ZRANGE is not None:
-            calib_data = cs.ApplyZCut(DBDIR,SOURCE,ZRANGE,calib_data_all)
+            calib_data = cs.ApplyZCut(DBDIR,CALIBSOURCE,ZRANGE,calib_data)
         print("NUMBER OF FILES AFTER ZCUT: " + str(len(calib_data)))
         ru.save_sacrifice_list(RESULTDIR, calib_data,'sacestimate_calibfiles.json')
         SacHists = sh.SacrificeHistGen(rootfiles=calib_data,config_dict=config_dict,
                 source=CALIBSOURCE)
         SacHists.GenerateHistograms()
         if NOSAVE is False:
-            SacHists.SaveHistograms(RESULTDIR)
+            SacHists.SaveHistograms(savedir="%s/calib_sachists"%(RESULTDIR))
     
         SacSysUnc = sa.SacrificeHistAnalyzer(Sacrifice_Histograms=SacHists,\
                 config_dict=config_dict)
@@ -122,10 +122,10 @@ if __name__ == '__main__':
 
     #Run bifurcation analysis on Physics files
     if BIFURCATE is True:
-        physics_roots = glob.glob(PHYSDIR+"/*.ntuple.root")
+        physics_roots = glob.glob(ANALYSISDIR+"/*.ntuple.root")
         ru.save_bifurcation_list(RESULTDIR,physics_roots,'bifurcation_analysisfiles.json')
         if DEBUG is True:
-            print("PHYS_ROOTS: " + str(physics_roots))
+            print("ANALYSIS_ROOTS: " + str(physics_roots))
         Bifurcator = bi.Bifurcator(rootfiles=physics_roots,config_dict=config_dict)
         Bifurcator.Bifurcate()
         if NOSAVE is False:
@@ -137,7 +137,7 @@ if __name__ == '__main__':
         signal_estimate_summary = None
         try:
             bifurcation_summary = ru.LoadJson(RESULTDIR,"bifurcation_boxes.json")
-            cut_sac_summary = ru.LoadJson(RESULTDIR,"cut_sacrifices_total.json")
+            cut_sac_summary = ru.LoadJson(RESULTDIR,"calib_cut_sacrifices_total.json")
         except IOError:
             print("Bifurcation or Cut Sacrifice Summary loading error.  Were these"+\
                     "analyses run?")

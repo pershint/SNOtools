@@ -56,6 +56,6 @@ signalmc_def = os.path.abspath(os.path.join(THISDIR,"..","ntuples","signal_mc"))
 parser.set_defaults(NOSAVE=False,debug=False,CALIBSACANALYSIS=False,
         MCSACANALYSIS=False,BIFURCATE=False,ESTIMATECONTAMINATION=False,
         JOBNUM=0,erange=None,
-        PHYSDIR=pd_default, LOWECONTAM=False,MCSIGNALDIR=signalmc_def,
+        ANALYSISDIR=pd_default, LOWECONTAM=False,MCSIGNALDIR=signalmc_def,
         CALIBDIR=cal_default,ZRANGE=None)
 args = parser.parse_args()

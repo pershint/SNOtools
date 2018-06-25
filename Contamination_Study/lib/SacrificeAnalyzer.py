@@ -26,7 +26,6 @@ class SacrificeHistAnalyzer(object):
         self.source = Sacrifice_Histograms.source
         self.hist_rootfiles = Sacrifice_Histograms.histogram_files  #All sacrifice root files
         self.hist_runnums = Sacrifice_Histograms.histogram_runnums
-        self.source=source
         self.cdict = config_dict
         self.calib_positions = {}
         self.sacrifice_byrun = {}
