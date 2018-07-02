@@ -35,11 +35,16 @@ class SacrificeHistGen(object):
         #Clears currenet sacrifice_histogram list first
         self.sacrifice_histograms = []
         basecuts = []
+        udotr = "(posx*dirx + posy*diry + posz*dirz)/sqrt(posx**2 + posy**2 + posz**2)"
         allcriteria=""
         if self.cdict['r_high'] is not None:
             basecuts.append("posr<"+str(self.cdict['r_high']))
         if self.cdict['r_low'] is not None:
             basecuts.append("posr>"+str(self.cdict['r_low']))
+        if self.cdict['udotr_high'] is not None:
+            basecuts.append(udotr+"<"+str(self.cdict['udotr_high']))
+        if self.cdict['udotr_low'] is not None:
+            basecuts.append(udotr+">"+str(self.cdict['udotr_low']))
         if self.cdict['E_high'] is not None: 
             basecuts.append("energy<"+str(self.cdict['E_high']))
         if self.cdict['E_low'] is not None: 
