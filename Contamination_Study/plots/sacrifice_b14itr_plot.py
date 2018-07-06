@@ -22,7 +22,7 @@ def weighted_stdev(vals,valavg, uncs):
     weights = 1/(uncs**2)
     return np.sqrt((len(weights)*np.sum(weights*(vals-valavg)**2))/((len(weights)-1)*np.sum(weights)))
 
-def PrepData_ClassSac(rootfiles=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcmask=None):
+def PrepData_ClassSac(rootfiles=[],var="nhits",precuts=None,nbins=10,xmin=10.0,xmax=100.0):
     '''
     Takes in a rootfile and returns a PandaFrame object that can be used
     for plotting in matplotlib.  Returns var vs. fractional sacrifice for
@@ -32,17 +32,21 @@ def PrepData_ClassSac(rootfiles=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcm
     for rf in rootfiles:
         data.Add(rf)
     #Now, make a new dictionary object: key is cutname, value is histogram
-    if dcmask is not None:
+    if precuts is not None:
         data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,nbins,xmin,xmax),
-                "fitValid==1&&isCal==1&&energy>5.5&&energy<9.0&&posr<5500&&((dcFlagged&%i)!=%i)" % (dcmask,dcmask),"goff")
+                "fitValid==1&&isCal==1&&%s" % (precuts),"goff")
     else:
         data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,nbins,xmin,xmax),
-                "fitValid==1&&isCal==1&&energy>5.5&&energy<9.0&&posr<5500","goff")
+                "fitValid==1&&isCal==1","goff")
     h_allevents = gDirectory.Get("h_allevents")
     h_allevents.Sumw2()
     cutnames = ()
     allclasssacs = {}
     labeldict = ["b14_low", "b14_high","itr_low","total"]
+    if precuts is None:
+        precuts = "&&"
+    else:
+        precuts ="&&%s&&"%(precuts)
     for cut in labeldict:
         graphdict={}
         vardat, fs,fs_unc =(), (), () #pandas wants ntuples
@@ -50,16 +54,16 @@ def PrepData_ClassSac(rootfiles=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcm
         h_cut_FracFlagged.Sumw2()
         if cut == "b14_low":
             data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
-                    "energy>5.5&&energy<9.0&&posr<5500&&fitValid==1&&isCal==1&&beta14<-0.12","goff")
+                    "fitValid==1%sisCal==1&&beta14<-0.12"%(precuts),"goff")
         if cut == "b14_high":
             data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
-                    "energy>5.5&&energy<9.0&&posr<5500&&fitValid==1&&isCal==1&&beta14>0.95" ,"goff")
+                    "fitValid==1%sisCal==1&&beta14>0.95"%(precuts) ,"goff")
         if cut == "itr_low":
             data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
-                    "energy>5.5&&energy<9.0&&posr<5500&&fitValid==1&&isCal==1&&itr<0.55" ,"goff")
+                    "fitValid==1%sisCal==1&&itr<0.55"%(precuts) ,"goff")
         if cut == "total":
             data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
-                    "energy>5.5&&energy<9.0&&posr<5500&&fitValid==1&&isCal==1&&(beta14<-0.12 || beta14>0.95 || itr<0.55)" ,"goff")
+                    "fitValid==1%sisCal==1&&(beta14<-0.12 || beta14>0.95 || itr<0.55)"%(precuts) ,"goff")
         print("CUT: " + str(cut))
         h_flagged = gDirectory.Get("h_flagged")
         h_flagged.Sumw2()
@@ -86,7 +90,6 @@ def PrepData_ClassSac(rootfiles=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcm
 def Plot_ClassSac(allclasssacs,meta={"binwidth":10.0, "variable":"nhits"},
         fittotal=True):
     sns.set_style("whitegrid")
-    sns.axes_style("whitegrid")
     xkcd_colors = ['slate blue', 'black', 'brown', 'blue',
             'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
             'aqua blue','vomit', 'black','twilight']

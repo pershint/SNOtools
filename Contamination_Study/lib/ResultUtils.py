@@ -2,7 +2,7 @@
 
 import json
 
-def save_calib_list(directory,fullpath_list):
+def save_sacrifice_list(directory,fullpath_list,filename):
     #Strips off the directory, places the root names in a list, and saves it
     #in the RESULTDIR
     physics_roots = []
@@ -11,11 +11,11 @@ def save_calib_list(directory,fullpath_list):
         rootname = rootname[len(rootname)-1]
         physics_roots.append(rootname)
     analysis_list = {}
-    analysis_list["runs_used_in_bifurcation"] = physics_roots
-    with open(directory+"/calibration_run_list.json","w") as f:
+    analysis_list["runs_used_in_sac_estimate"] = physics_roots
+    with open(directory+"/"+filename,"w") as f:
         json.dump(analysis_list,f,sort_keys=True,indent=4)
 
-def save_physics_list(directory,fullpath_list):
+def save_bifurcation_list(directory,fullpath_list,filename):
     #Strips off the directory, places the root names in a list, and saves it
     #in the RESULTDIR
     physics_roots = []
@@ -25,7 +25,7 @@ def save_physics_list(directory,fullpath_list):
         physics_roots.append(rootname)
     analysis_list = {}
     analysis_list["runs_used_in_bifurcation"] = physics_roots
-    with open(directory+"/physics_run_list.json","w") as f:
+    with open(directory+"/"+filename,"w") as f:
         json.dump(analysis_list,f,sort_keys=True,indent=4)
 
 def LoadJson(result_directory,filename):

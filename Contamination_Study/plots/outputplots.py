@@ -96,7 +96,6 @@ def PlotContamApproaches(DIR):
 
 def PlotRadius(cut_sacrifice_byrun,cut):
     sns.set_style("whitegrid")
-    sns.axes_style("whitegrid")
     xkcd_colors = ['slate blue', 'fluro green', 'twilight', 'blue',
             'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
             'aqua blue','vomit', 'black','yellowgreen']

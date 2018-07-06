@@ -21,7 +21,7 @@ class ContaminationEstimator(object):
         self.c = Bifurcation_Summary['c']
         self.d = Bifurcation_Summary['d']
 
-        print("SACRIFICE SUMMARY: " + str(Sacrifice_Summary))
+
         self.x1 = 1.0 - Sacrifice_Summary['cut1']['total_fracsac']
         self.x2 = 1.0 - Sacrifice_Summary['cut2']['total_fracsac']
         self.x1_unc = Sacrifice_Summary['cut1']['total_fracsac_unc']
@@ -40,28 +40,28 @@ class ContaminationEstimator(object):
 class LowEContamination(ContaminationEstimator):
     '''Contamination estimate that requires an estimate on the
     number of signal events in the a-box'''
-    def __init__(self, Bifurcation_Summary=None, Sacrifice_Summary=None):
+    def __init__(self, Bifurcation_Summary=None, Sacrifice_Summary=None,sigdict=None):
         super(LowEContamination,self).__init__(Bifurcation_Summary=Bifurcation_Summary,
                 Sacrifice_Summary=Sacrifice_Summary)
-        self.signal_estimate = self.a/(self.x1*self.x2)
-        self.signal_estimate_unc = self.signal_estimate*np.sqrt((self.x1_unc/self.x1)**2 +\
-                (self.x2_unc/self.x2)**2 + (1/self.a))
+        self.signal_estimate = sigdict['cut1']['nonpath_events']
+        self.signal_estimate_unc = np.sqrt(self.signal_estimate)
         self.contamination_summary['type'] = 'LowE'
 
     def _N1(self):
         return (self.b - (self.x1*(1.0-self.x2)*self.signal_estimate))
+
     def _N1_unc(self):
-        t2_unc = abs(self.x1*(1.0-self.x2)*self.signal_estimate)*np.sqrt(\
-                (self.x1_unc/self.x1)**2 + (self.x2_unc/(1-self.x2))**2 + \
-                (self.signal_estimate_unc/self.signal_estimate)**2)
-        n1u = np.sqrt(self.b + (t2_unc)**2)
+        n1u = np.sqrt((np.sqrt(self.b) -(self.x1*(1.0-self.x2)*self.signal_estimate))**2 +\
+                (self.b -(self.x1_unc*(1.0-self.x2)*self.signal_estimate))**2 +\
+                (self.b + (self.x1*self.x2_unc*self.signal_estimate))**2 + \
+                (self.b - (self.x1*(1.0-self.x2)*self.signal_estimate_unc))**2)
         return n1u
 
     def _N2_unc(self):
-        t2_unc = abs((self.x2*(1.0-self.x1)*self.signal_estimate))*np.sqrt(\
-                (self.x1_unc/(1-self.x1))**2 + (self.x2_unc/(self.x2))**2 + \
-                (self.signal_estimate_unc/self.signal_estimate)**2)
-        n2u = np.sqrt((np.sqrt(self.c))**2 + (t2_unc)**2)
+        n2u = np.sqrt((np.sqrt(self.c) -(self.x2*(1.0-self.x1)*self.signal_estimate))**2 +\
+                (self.c -(self.x2_unc*(1.0-self.x1)*self.signal_estimate))**2 +\
+                (self.c + (self.x2*self.x1_unc*self.signal_estimate))**2 + \
+                (self.c - (self.x2*(1.0-self.x1)*self.signal_estimate_unc))**2)
         return n2u
 
     def _N2(self):
@@ -69,12 +69,11 @@ class LowEContamination(ContaminationEstimator):
     
     def _D(self):
         return (self.d - ((1.0-self.x2)*(1.0-self.x1)*self.signal_estimate))
-    
     def _D_unc(self):
-        t3_unc = (self.d - ((1.0-self.x2)*(1.0-self.x1)*self.signal_estimate))*np.sqrt(\
-                (self.x1_unc/(1-self.x1))**2 + (self.x2_unc/(1-self.x2))**2 + \
-                (self.signal_estimate_unc/self.signal_estimate)**2)
-        Du = np.sqrt((np.sqrt(self.d))**2 + (t3_unc)**2)
+        Du = np.sqrt((np.sqrt(self.d) - ((1.0-self.x2)*(1.0-self.x1)*self.signal_estimate))**2 +\
+                (self.d +(self.x2_unc*(1-self.x1)*self.signal_estimate))**2 +\
+                (self.d + ((1.0-self.x2)*self.x1_unc*self.signal_estimate))**2 + \
+                (self.d - ((1.0-self.x1)*(1.0-self.x2)*self.signal_estimate_unc))**2)
         return Du
 
     def _y1y2B(self):
@@ -82,18 +81,12 @@ class LowEContamination(ContaminationEstimator):
 
     def CalculateContamination(self):
         '''returns estimated y1y2B value based on bifurcation box values & signal estimate'''
-        print("N1: " + str(self._N1()))
-        print("N2: " + str(self._N2()))
-        print("DENOM: " + str(self._D()))
         y1y2B = self._N1() * self._N2() / self._D() 
         self.contamination_summary['y1y2B'] = y1y2B
         return y1y2B
 
     def CalculateContaminationUnc(self):
-        print("N1_UNC: " + str(self._N1_unc()))
-        print("N2_UNC: " + str(self._N2_unc()))
-        print("DENOM_UNC: " + str(self._D_unc()))
-        y1y2B_unc = abs(self._y1y2B()) * np.sqrt((self._N1_unc()/self._N1())**2 + \
+        y1y2B_unc = self._y1y2B() * np.sqrt((self._N1_unc()/self._N1())**2 + \
                 (self._N2_unc()/self._N2())**2 + (self._D_unc()/self._D())**2)
         self.contamination_summary['y1y2B_unc'] = y1y2B_unc
         return y1y2B_unc

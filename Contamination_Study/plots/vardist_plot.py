@@ -46,7 +46,6 @@ def PrepData_EVDist(rootfiles=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcmas
 
 def Plot_EVDist(distdict):
     sns.set_style("whitegrid")
-    sns.axes_style("whitegrid")
     xkcd_colors = ['purple', 'fluro green', 'brown', 'slate blue',
             'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
             'aqua blue','vomit', 'black','twilight']

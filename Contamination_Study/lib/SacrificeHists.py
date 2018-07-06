@@ -8,17 +8,16 @@ import copy
 import os,sys
 
 class SacrificeHistGen(object):
-    def __init__(self, rootfiles=[], config_dict={},sourcetype=None,zcut=None):
-        self.sourcetype = sourcetype
+    def __init__(self, rootfiles=[], config_dict={},source='N/A'):
         self.rootfile_list = rootfiles
-        self.zcut = zcut
+        self.source = source
         self.nbins = 14
         self.elow = config_dict["E_low"]
         self.ehigh = config_dict["E_high"]
         self.cdict = config_dict
         self.sacrifice_histograms = []
         self.histogram_files = []
-
+        self.histogram_runnums = []
     def add_rootfile(self, rootfile):
         #Add a rootfile to the list of rootfiles to perform analysis on
         self.rootfile_list.append(rootfile)
@@ -36,8 +35,16 @@ class SacrificeHistGen(object):
         #Clears currenet sacrifice_histogram list first
         self.sacrifice_histograms = []
         basecuts = []
-        if self.cdict['r_cut'] is not None:
-            basecuts.append("posr<"+str(self.cdict['r_cut']))
+        udotr = "(posx*dirx + posy*diry + posz*dirz)/sqrt(posx**2 + posy**2 + posz**2)"
+        allcriteria=""
+        if self.cdict['r_high'] is not None:
+            basecuts.append("posr<"+str(self.cdict['r_high']))
+        if self.cdict['r_low'] is not None:
+            basecuts.append("posr>"+str(self.cdict['r_low']))
+        if self.cdict['udotr_high'] is not None:
+            basecuts.append(udotr+"<"+str(self.cdict['udotr_high']))
+        if self.cdict['udotr_low'] is not None:
+            basecuts.append(udotr+">"+str(self.cdict['udotr_low']))
         if self.cdict['E_high'] is not None: 
             basecuts.append("energy<"+str(self.cdict['E_high']))
         if self.cdict['E_low'] is not None: 
@@ -47,10 +54,13 @@ class SacrificeHistGen(object):
         if self.cdict['Z_high'] is not None:
             basecuts.append("posz<"+str(self.cdict['Z_high']*10.0))
         basecuts.append("fitValid==1")
-        basecuts.append("isCal==1")
-        basecuts.append("((dcFlagged&%s)==%s)" % (self.cdict["sacpath_DCmask"],\
+        if self.source == "N16":
+            basecuts.append("isCal==1")
+            allcriteria="isCal==1"
+        if self.source != "MC":
+            basecuts.append("((dcFlagged&%s)==%s)" % (self.cdict["sacpath_DCmask"],\
                 self.cdict["sacpath_DCmask"]))
-        basecuts.append("((triggerWord&%s)==0)" % (self.cdict["path_trigmask"]))
+            basecuts.append("((triggerWord&%s)==0)" % (self.cdict["path_trigmask"]))
         cut1list = []
         cut1list.append("((dcFlagged&%s)!=%s)" % (self.cdict["cut1_DCmask"],\
                 self.cdict["cut1_DCmask"]))
@@ -69,8 +79,10 @@ class SacrificeHistGen(object):
             h_cut2_FracFlagged = ROOT.TH1D("h_cut2_FracFlagged", "h_cut2_FracFlagged", self.nbins,self.elow,self.ehigh)
             rootfile.cd()
             datatree=rootfile.Get("output")
+            datatree.GetEntry(1)
+            self.histogram_runnums.append(copy.deepcopy(datatree.runID))
             hist_dim = "%d,%f,%f" % (self.nbins,self.elow,self.ehigh)
-            datatree.Draw("energy>>h_AllEvents("+hist_dim+")","isCal==1","goff")
+            datatree.Draw("energy>>h_AllEvents("+hist_dim+")",allcriteria,"goff")
             h_AllEvents = gDirectory.Get("h_AllEvents")
             datatree.Draw("energy>>h_AllNonpathEvents("+hist_dim+")",base,"goff")
             h_AllNonpathEvents = gDirectory.Get("h_AllNonpathEvents")
@@ -112,20 +124,21 @@ class SacrificeHistGen(object):
                 outstring=outstring+delim+s
         return outstring
 
-    def SaveHistograms(self,savedir):
+    def SaveHistograms(self,savedir=None):
+        if savedir is None:
+            print("No save directory given.  Not saving histograms")
+            return
         self.histogram_files = []
         for j,rf in enumerate(self.rootfile_list):
             outfilename=rf.split("/")
-            print("ROOTFILE,SPLIT IN ARRAY" + str(outfilename))
             outfilename=outfilename[len(outfilename)-1].rstrip(".root")+"_sachists.root"
             print("OUTFILENAME: " + outfilename)
-            outfiledir=savedir+"/sachists"
-            if not os.path.exists(outfiledir):
-                os.makedirs(outfiledir)
-            outfile = ROOT.TFile(outfiledir+"/"+outfilename,"CREATE")
+            if not os.path.exists(savedir):
+                os.makedirs(savedir)
+            outfile = ROOT.TFile(savedir+"/"+outfilename,"CREATE")
             for histogram in self.sacrifice_histograms[j]:
                 outfile.Add(histogram)
             outfile.Write()
             outfile.Close()
-            self.histogram_files.append(outfiledir+"/"+outfilename)
+            self.histogram_files.append(savedir+"/"+outfilename)
 

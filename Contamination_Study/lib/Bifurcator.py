@@ -37,8 +37,16 @@ class Bifurcator(object):
         for f in self.rootfile_list:
             ch.Add(f)
         basecuts = []
-        if self.cdict['r_cut'] is not None:
-            basecuts.append("posr<"+str(self.cdict['r_cut']))
+        udotr = "(posx*dirx + posy*diry + posz*dirz)/sqrt(posx**2 + posy**2 + posz**2)"
+        
+        if self.cdict['r_high'] is not None:
+            basecuts.append("posr<"+str(self.cdict['r_high']))
+        if self.cdict['r_low'] is not None:
+            basecuts.append("posr>"+str(self.cdict['r_low']))
+        if self.cdict['udotr_high'] is not None:
+            basecuts.append(udotr+"<"+str(self.cdict['udotr_high']))
+        if self.cdict['udotr_low'] is not None:
+            basecuts.append(udotr+">"+str(self.cdict['udotr_low']))
         if self.cdict['E_high'] is not None: 
             basecuts.append("energy<"+str(self.cdict['E_high']))
         if self.cdict['E_low'] is not None: 
@@ -149,7 +157,8 @@ class Bifurcator(object):
             datatree=rootfile.Get("output")
             for i in xrange(datatree.GetEntries()):
                 datatree.GetEntry(i)
-                if datatree.posr > self.cdict['r_cut']:
+                if datatree.posr > self.cdict['r_high'] or \
+                        datatree.posr < self.cdict['r_low']:
                     continue
                 if datatree.fitValid is False:
                     continue

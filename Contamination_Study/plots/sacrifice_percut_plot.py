@@ -22,7 +22,7 @@ def weighted_stdev(vals,valavg, uncs):
     weights = 1/(uncs**2)
     return np.sqrt((len(weights)*np.sum(weights*(vals-valavg)**2))/((len(weights)-1)*np.sum(weights)))
 
-def SacVSVar_Data(rootfiles=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcmask=None):
+def SacVSVar_Data(rootfiles=[],var="nhits",precuts=None,nbins=10,xmin=10.0,xmax=100.0,dcmask=None):
     '''
     Takes in a rootfile and returns a PandaFrame object that can be used
     for plotting in matplotlib.  Returns nhits vs. fractional sacrifice for
@@ -48,8 +48,12 @@ def SacVSVar_Data(rootfiles=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcmask=
             plotmask[cut] = fullmask[cut]
     plotmask[dcmask] = "total"
     #Now, make a new dictionary object: key is cutname, value is histogram
-    data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,nbins,xmin,xmax),
-            "fitValid==1&&isCal==1&&energy>5.5&&energy<9.0","goff")
+    if precuts is not None:
+        data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,nbins,xmin,xmax),
+                "fitValid==1&&isCal==1&&%s"%(precuts),"goff")
+    else:
+        data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,nbins,xmin,xmax),
+                "fitValid==1&&isCal==1","goff")
     h_allevents = gDirectory.Get("h_allevents")
     h_allevents.Sumw2()
     cutnames = ()
@@ -63,9 +67,14 @@ def SacVSVar_Data(rootfiles=[],var="nhits",nbins=10,xmin=10.0,xmax=100.0,dcmask=
         vardat, fs,fs_unc =(), (), () #pandas wants ntuples
         h_cut_FracFlagged = ROOT.TH1D("h_cut_FracFlagged", "h_cut_FracFlagged", nbins,xmin,xmax)
         h_cut_FracFlagged.Sumw2()
-        data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
-                "fitValid==1&&isCal==1&&energy>5.5&&energy<9.0&&"+\
-                        "posr<5500&&((dcFlagged&%i)!=%i)" % (cutint,cutint),"goff")
+        if precuts is not None:
+            data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
+                    "fitValid==1&&isCal==1&&%s"%(precuts)+\
+                         "&&((dcFlagged&%i)!=%i)" % (cutint,cutint),"goff")
+        else:
+            data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
+                    "fitValid==1&&isCal==1&&"+\
+                            "((dcFlagged&%i)!=%i)" % (cutint,cutint),"goff")
         h_flagged = gDirectory.Get("h_flagged")
         h_flagged.Sumw2()
         h_cut_FracFlagged.Divide(h_flagged,h_allevents,1.,1.,"b")
@@ -101,7 +110,6 @@ def GetTopSacs(allcutsacs,topnumber=5,dcmask=None):
 
 def SacVSVar_Plot(allcutsacs,topcuts=None,metadata={"binwidth":10.0,"variable":"nhits"},fittotal=True):
     sns.set_style("whitegrid")
-    sns.axes_style("whitegrid")
     xkcd_colors = ['black','slate blue', 'fluro green', 'brown', 'blue',
             'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'leaf',
             'aqua blue','vomit', 'red','twilight']
@@ -111,7 +119,7 @@ def SacVSVar_Plot(allcutsacs,topcuts=None,metadata={"binwidth":10.0,"variable":"
             plt.errorbar(x=allcutsacs[cut].vardat, 
                     y=allcutsacs[cut].fractional_sacrifice,
                     yerr=allcutsacs[cut].fs_uncertainty,
-                    linestyle='none', marker='+', label=cut, markersize=8,
+                    linestyle='none', marker='+', label=cut, markersize=7,
                     elinewidth=2, capsize=0)
     else:
         fracsum,fracuncsum=[],[]
@@ -119,12 +127,12 @@ def SacVSVar_Plot(allcutsacs,topcuts=None,metadata={"binwidth":10.0,"variable":"
             if cut in topcuts:
                 plt.errorbar(x=allcutsacs[cut].vardat, y=allcutsacs[cut].fractional_sacrifice,
                         yerr=allcutsacs[cut].fs_uncertainty, linestyle='none',
-                        marker='o', label=cut, capsize=0, elinewidth=2, markersize=5)
+                        marker='o', label=cut, capsize=0, elinewidth=2, markersize=7)
             else:
                 fracsum.append(allcutsacs[cut].fractional_sacrifice)
                 fracuncsum.append(allcutsacs[cut].fs_uncertainty)
         plt.errorbar(x=allcutsacs[cut].vardat,y=sum(fracsum),yerr=sum(fracuncsum),
-                linestyle='none',marker='o', capsize=0, elinewidth=2, label='All other cuts', markersize=5)
+                linestyle='none',marker='o', capsize=0, elinewidth=2, label='All other cuts', markersize=7)
 
     if fittotal is True:
         popt, pcov = spc.curve_fit(flatline, allcutsacs["total"].vardat, allcutsacs["total"].fractional_sacrifice,
