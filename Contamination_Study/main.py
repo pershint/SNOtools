@@ -134,7 +134,6 @@ if __name__ == '__main__':
     if ESTIMATECONTAMINATION is True:
         bifurcation_summary = None
         cut_sac_summary = None
-        signal_estimate_summary = None
         try:
             bifurcation_summary = ru.LoadJson(RESULTDIR,"bifurcation_boxes.json")
             cut_sac_summary = ru.LoadJson(RESULTDIR,"calib_cut_sacrifices_total.json")
@@ -144,13 +143,7 @@ if __name__ == '__main__':
             raise
         if LOWECONTAM is True:
             print("CALCULATING CONTAMINATION ASSUMING LOW ENERGY REGION")
-            try:
-                signal_estimate_summary = ru.LoadJson(RESULTDIR,"MC_cut_sacrifices_total.json")
-            except IOError:
-                print("Error loading signal estimate file... does it exist?")
-                raise
-            CE = ca.LowEContamination(bifurcation_summary,cut_sac_summary,\
-                    signal_estimate_summary)
+            CE = ca.LowEContamination(bifurcation_summary,cut_sac_summary)
             contam = CE.CalculateContamination()
             contam_unc = CE.CalculateContaminationUnc()
             if DEBUG is True:

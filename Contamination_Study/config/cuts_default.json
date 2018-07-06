@@ -1,4 +1,5 @@
 {
+    "comments": "Nucleon decay ROI", 
     "E_high": 5.5, 
     "E_low": 4.0, 
     "Z_high": 600, 
@@ -17,7 +18,9 @@
     "dcs_sonly": 0, 
     "fits_only": 0, 
     "path_trigmask": 5216, 
-    "r_high": 5500, 
-    "r_low": 0, 
+    "r_high": 5300, 
+    "r_low": 0,
+    "udotr_low": -1.0,
+    "udotr_high": 1.0, 
     "sacpath_DCmask": 117647744196834
 }
