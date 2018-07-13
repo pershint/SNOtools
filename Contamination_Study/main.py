@@ -64,8 +64,8 @@ if __name__ == '__main__':
         print("NUMBER OF N16 FILES: " + str(len(calib_data)))
         if DEBUG is True:
             print("N16_ROOTS: " + str(calib_data))
-
-        SACRIFICE_VARIABLES = ['posr']#'energy','udotr','posr']
+        ru.save_sacrifice_list(RESULTDIR,calib_data,"calibration_data_used.json")
+        SACRIFICE_VARIABLES = ['energy','udotr']#'posr']
         sacrifice_results = {'cut1': {}, 'cut2': {}} 
         for variable in SACRIFICE_VARIABLES:
             DCSacs = sa.DCSacrificeAnalyzer(rootfiles=calib_data, cuts_dict=config_dict)
@@ -79,7 +79,7 @@ if __name__ == '__main__':
             if PLOTS is True: 
                 ClassSacs.ShowPlottedSacrifice()
         if NOSAVE is False:
-            with open("%s/calib_cut_sacrifices_total.json","w") as f:
+            with open("%s/calib_cut_sacrifices_total.json"%(RESULTDIR),"w") as f:
                 json.dump(sacrifice_results,f,sort_keys=True,indent=4)
 
 

@@ -108,9 +108,9 @@ class SacrificeAnalyzer(object):
         systematic_unc = self._weighted_stdev(self.sac_percut["total"].fractional_sacrifice,
             float(popt[0]),self.sac_percut["total"].fs_uncertainty)
         print("WEIGHTED STANDARD DEVIATION FROM FLAT: " + str(systematic_unc)) 
-        self.total_sacrifice['sacrifice'] = popt
-        self.total_sacrifice['stat_unc'] = statistical_unc
-        self.total_sacrifice['sys_unc'] = systematic_unc
+        self.total_sacrifice['sacrifice'] = float(popt[0])
+        self.total_sacrifice['stat_unc'] = float(statistical_unc)
+        self.total_sacrifice['sys_unc'] = float(systematic_unc)
         print(self.total_sacrifice) 
         return self.total_sacrifice
 
