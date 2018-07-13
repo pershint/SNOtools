@@ -12,17 +12,17 @@ parser.add_argument('--nosave', dest='NOSAVE',action='store_true',
         help='Do not save any outputs; ensures no writing is done')
 parser.add_argument('--debug', dest='debug',action='store_true',
         help='Run code in debug mode')
+parser.add_argument('--plots', dest='PLOTS',action='store_true',
+        help='Show sacrifice distribution and fit plots')
 parser.add_argument('--jobnum', dest='JOBNUM', action='store',
         help='Specify this jobs number among others.  Will save results'+\
                 'to ./output/results_jN')
+parser.add_argument('--configfile', dest='CONFIGFILE',action='store',
+        type=str,help='Specify the JSON file in ./config/ that has all cut and ROI"+\
+                "selection desired for analysis.  Default is "cuts_default.json"')
 parser.add_argument('--lowE', dest='LOWECONTAM',action='store_true',
         help='Tell contamination study whether or not to use analysis for'+\
                 'low energy contamination.  For ND, lowE best for E < 5.5 MeV')
-parser.add_argument('--signalmcdir', dest='MCSIGNALDIR',action='store',
-        type=str,help='Specify the directory where the signal monte carlo '+\
-                'root files are stored.  For this analysis, signal="cherenkov events"'+\
-                'Will read all files ending with .ntuple.root'+\
-                'from the directory. Default: ./ntuples/signal_mc/')
 parser.add_argument('--analysisdir', dest='ANALYSISDIR',action='store',
         type=str,help='Specify the directory where the analysis files'+\
                 'are stored.  Will read all files ending with .ntuple.root'+\
@@ -52,10 +52,8 @@ parser.add_argument('--zrange', dest='ZRANGE', action='store',nargs='+',
 THISDIR = os.path.dirname(__file__)
 pd_default = os.path.abspath(os.path.join(THISDIR,"..", "ntuples", "physics_data"))
 cal_default = os.path.abspath(os.path.join(THISDIR,"..", "ntuples","calibration"))
-signalmc_def = os.path.abspath(os.path.join(THISDIR,"..","ntuples","signal_mc"))
 parser.set_defaults(NOSAVE=False,debug=False,CALIBSACANALYSIS=False,
         MCSACANALYSIS=False,BIFURCATE=False,ESTIMATECONTAMINATION=False,
-        JOBNUM=0,erange=None,
-        ANALYSISDIR=pd_default, LOWECONTAM=False,MCSIGNALDIR=signalmc_def,
-        CALIBDIR=cal_default,ZRANGE=None)
+        JOBNUM=0,erange=None,ANALYSISDIR=pd_default,CONFIGFILE='cuts_default.json', 
+        LOWECONTAM=False,CALIBDIR=cal_default,ZRANGE=None,PLOTS=False)
 args = parser.parse_args()

@@ -1,8 +1,7 @@
-#TODO: Write a class that takes in a list of N16 files, and can return a
-#Subset of N16 files based on date (From the calibration database), a 
-#single run, or a set of run ranges.  
-#Generalize this so it can be used for physics ntuple files too; we will
-#Need to do the bifurcation analysis in different time bins as well
+#Some functions that can be used to Load the calibration dictionaries
+#Defined in ../DB/ and remove runs from a filelist based on the run number
+#zposition associated with the run
+
 import glob
 import json
 

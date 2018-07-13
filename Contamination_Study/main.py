@@ -3,38 +3,35 @@
 #Using the given calibration files.  Then, the bifurcation analysis is run over
 #the given data physics files.  Finally, an estimate on the contamination for the
 #chosen configuration of cuts/ROI choice is output.
-import matplotlib.pyplot as plt
 import lib.ArgParser as ap
-import numpy as np
-import os,sys
-import glob
-import json
 
 args = ap.args
 
 DEBUG = args.debug
 NOSAVE=args.NOSAVE
+CONFIGFILE=args.CONFIGFILE
 CALIBSACANALYSIS=args.CALIBSACANALYSIS
-MCSACANALYSIS=args.MCSACANALYSIS
 BIFURCATE=args.BIFURCATE
 LOWECONTAM=args.LOWECONTAM
 ESTIMATECONTAMINATION=args.ESTIMATECONTAMINATION
+PLOTS=args.PLOTS
 ERANGE=args.ERANGE
 ZRANGE=args.ZRANGE
 JOBNUM=args.JOBNUM
 CALIBDIR=args.CALIBDIR
 ANALYSISDIR=args.ANALYSISDIR
-MCSIGNALDIR=args.MCSIGNALDIR
 
+import numpy as np
+import os,sys,time
+import glob
+import json
+import matplotlib.pyplot as plt
 import ROOT
 import lib.Bifurcator as bi
-import lib.SacrificeHists as sh
-import plots.SacrificePlots as sp
 import plots.BifurPlots as bp
-import lib.SacrificeAnalyzer as sa
+import lib.DCClassSacrifice as sa
 import lib.ContaminationAnalyzer as ca
 import lib.ConfigParser as cp
-import lib.CalibSelector as cs
 import lib.ResultUtils as ru
 
 basepath = os.path.dirname(__file__)
@@ -49,11 +46,10 @@ DBDIR = os.path.abspath(os.path.join(MAINDIR, "DB"))
 if __name__ == '__main__':
     #Get your run files to load
     #Load the configuration file to use
-    if MCSACANALYSIS or CALIBSACANALYSIS or BIFURCATE is True:
+    if CALIBSACANALYSIS or BIFURCATE is True:
         ConfigParser = cp.ConfigParser(CONFIGDIR)
         print("CONFIGDIR: " + str(CONFIGDIR))
-        config_dict = ConfigParser.Load_JsonConfig('cuts_default.json')
-        setup_dict = ConfigParser.Load_JsonConfig('setup.json')
+        config_dict = ConfigParser.Load_JsonConfig(CONFIGFILE)
         if ZRANGE is not None:
             config_dict["Z_high"] = float(ZRANGE[0])
             config_dict["Z_low"] = float(ZRANGE[1])
@@ -63,66 +59,33 @@ if __name__ == '__main__':
         if NOSAVE is False:
             ConfigParser.SaveConfiguration(config_dict,RESULTDIR,"used_cutsconfig.json")
 
-    if MCSACANALYSIS is True:
-        mc_data_all = glob.glob("%s/*.ntuple.root"%(MCSIGNALDIR))
-        print("NUMBER OF SIGNAL MC FILES: " + str(len(mc_data_all)))
-        if DEBUG is True:
-            print("MONTECARLO_ROOTS: " + str(mc_data_all))
-        ru.save_sacrifice_list(RESULTDIR, mc_data_all,"sacestimate_mcfiles.json")
-        SacHists = sh.SacrificeHistGen(rootfiles=mc_data_all,config_dict=config_dict,
-                source="MC")
-        SacHists.GenerateHistograms()
-        if NOSAVE is False:
-            SacHists.SaveHistograms(savedir="%s/MC_sachists"%(RESULTDIR))
-    
-        SacSysUnc = sa.SacrificeHistAnalyzer(Sacrifice_Histograms=SacHists,\
-                config_dict=config_dict)
-        SacSysUnc.CalculateSacrifices()
-        if DEBUG is True:
-            SacSysUnc.ShowSacrificeResults()
-        if NOSAVE is False:
-            SacSysUnc.SaveSacrificeByRun(RESULTDIR,"MC_cut_sacrifices_byrun.json")
-            SacSysUnc.SaveSacrificeSummary(RESULTDIR,"MC_cut_sacrifices_total.json")
-
     if CALIBSACANALYSIS is True:
-        CALIBSOURCE=setup_dict['CALIBSOURCE']
-        calib_data = glob.glob("%s/%s/*.ntuple.root"%(CALIBDIR,CALIBSOURCE))
+        calib_data = glob.glob("%s/*.ntuple.root"%(CALIBDIR))
         print("NUMBER OF N16 FILES: " + str(len(calib_data)))
         if DEBUG is True:
             print("N16_ROOTS: " + str(calib_data))
-        if ZRANGE is not None:
-            calib_data = cs.ApplyZCut(DBDIR,CALIBSOURCE,ZRANGE,calib_data)
-        print("NUMBER OF FILES AFTER ZCUT: " + str(len(calib_data)))
-        ru.save_sacrifice_list(RESULTDIR, calib_data,'sacestimate_calibfiles.json')
-        SacHists = sh.SacrificeHistGen(rootfiles=calib_data,config_dict=config_dict,
-                source=CALIBSOURCE)
-        SacHists.GenerateHistograms()
-        if NOSAVE is False:
-            SacHists.SaveHistograms(savedir="%s/calib_sachists"%(RESULTDIR))
-    
-        SacSysUnc = sa.SacrificeHistAnalyzer(Sacrifice_Histograms=SacHists,\
-                config_dict=config_dict)
-        SacSysUnc.LoadCalibrationPositions(DBDIR)
-        SacSysUnc.CalculateSacrifices()
-        if DEBUG is True:
-            SacSysUnc.ShowSacrificeResults()
-        if NOSAVE is False:
-            SacSysUnc.SaveSacrificeByRun(RESULTDIR,"calib_cut_sacrifices_byrun.json")
-            SacSysUnc.SaveSacrificeSummary(RESULTDIR,"calib_cut_sacrifices_total.json")
 
-#    if PLOTS is True:
-#       cut_sacrifices = ru.LoadJson(RESULTDIR,"cut_sacrifices_byrun.json")
-#       cut_sac_summary = ru.LoadJson(RESULTDIR,"cut_sacrifices_total.json")
-#       for axis in ['x','y','z']:
-#           sp.plot_sacrificevsCart(cut_sacrifices, 'cut1', axis)
-#           sp.plot_sacrificevsCart(cut_sacrifices, 'cut2', axis)
-#       for cut in ['cut1','cut2']:
-#           sp.plot_sacrificevsR(cut_sacrifices, cut)
-#           #sp.plot_XYSacrifice(cut_sacrifices, cut)
+        SACRIFICE_VARIABLES = ['posr']#'energy','udotr','posr']
+        sacrifice_results = {'cut1': {}, 'cut2': {}} 
+        for variable in SACRIFICE_VARIABLES:
+            DCSacs = sa.DCSacrificeAnalyzer(rootfiles=calib_data, cuts_dict=config_dict)
+            ClassSacs = sa.ClassSacrificeAnalyzer(rootfiles=calib_data, cuts_dict=config_dict)
+            DCSacs.AnalyzeData(var=variable,nbins=9)
+            sacrifice_results['cut1'][variable] = DCSacs.GetFitTotalAndUncertainties() 
+            if PLOTS is True: 
+                DCSacs.ShowPlottedSacrifice()
+            ClassSacs.AnalyzeData(var=variable,nbins=5)
+            sacrifice_results['cut2'][variable] = ClassSacs.GetFitTotalAndUncertainties() 
+            if PLOTS is True: 
+                ClassSacs.ShowPlottedSacrifice()
+        if NOSAVE is False:
+            with open("%s/calib_cut_sacrifices_total.json","w") as f:
+                json.dump(sacrifice_results,f,sort_keys=True,indent=4)
+
 
     #Run bifurcation analysis on Physics files
     if BIFURCATE is True:
-        physics_roots = glob.glob(ANALYSISDIR+"/*.ntuple.root")
+        physics_roots = glob.glob(ANALYSISDIR+"*.ntuple.root")
         ru.save_bifurcation_list(RESULTDIR,physics_roots,'bifurcation_analysisfiles.json')
         if DEBUG is True:
             print("ANALYSIS_ROOTS: " + str(physics_roots))

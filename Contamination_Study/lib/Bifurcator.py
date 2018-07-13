@@ -93,6 +93,9 @@ class Bifurcator(object):
                 outstring=outstring+delim+s
         return outstring
 
+    #NOTE: This method is deprecated; needs bringing up to speed with
+    #current version.  Specifically, cut1 is fixed to DC and cut2 is fixed
+    #to classifiers now.
     def FullBifurcateOutput(self,outputdir=None):
         if outputdir is None:
             print("Please specify an output directory to save the root file in.")

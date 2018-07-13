@@ -53,14 +53,16 @@ class SacrificeHistGen(object):
             basecuts.append("posz>"+str(self.cdict['Z_low']*10.0))
         if self.cdict['Z_high'] is not None:
             basecuts.append("posz<"+str(self.cdict['Z_high']*10.0))
-        basecuts.append("fitValid==1")
-        if self.source == "N16":
-            basecuts.append("isCal==1")
-            allcriteria="isCal==1"
-        if self.source != "MC":
-            basecuts.append("((dcFlagged&%s)==%s)" % (self.cdict["sacpath_DCmask"],\
-                self.cdict["sacpath_DCmask"]))
-            basecuts.append("((triggerWord&%s)==0)" % (self.cdict["path_trigmask"]))
+        if self.cdict['fitValid'] is not None: 
+            if self.cdict['fitValid'] is True: self.precuts.append("fitValid==1")
+            else: self.precuts.append("fitValid==0")
+        if self.cdict['isCal'] is not None:
+            if self.cdict['fitValid'] is True: self.precuts.append("isCal==1")
+            else: self.precuts.append("isCal==0")
+        
+        self.precuts.append("((dcFlagged&%s)==%s)" % (self.cdict["sacpath_DCmask"],\
+            self.cdict["sacpath_DCmask"]))
+        self.precuts.append("((triggerWord&%s)==0)" % (self.cdict["path_trigmask"]))
         cut1list = []
         cut1list.append("((dcFlagged&%s)!=%s)" % (self.cdict["cut1_DCmask"],\
                 self.cdict["cut1_DCmask"]))
