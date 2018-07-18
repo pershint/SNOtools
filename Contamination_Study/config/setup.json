@@ -1,3 +1,4 @@
 {
-    "CALIBSOURCE": "N16"
+    "SACRIFICE_VARIABLES": ["posr3","udotr","energy"],
+    "CUTS_TODO": ["cut1","cut2"]
 }

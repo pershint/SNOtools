@@ -1,3 +1,4 @@
+/ntuples/*
 /lib/*.pyc
 /lib/plots/*.pyc
 /misc/*.pyc

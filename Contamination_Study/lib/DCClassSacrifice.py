@@ -27,7 +27,7 @@ class SacrificeAnalyzer(object):
         self._SetAnalyzeRanges() 
         self._DefinePrecuts()
         self.xlabel_dict = {'energy': 'Energy (MeV)', 'udotr': r'$U . R$',
-                'r3': r'$frac{R}{R_{AV}}^{3}$','posr':'Radius (mm)'}
+                'posr3': r'$(R/R_{AV})^{3}$','posr':'Radius (mm)'}
 
     def _flatline(self,x,b):
         return b
@@ -44,10 +44,11 @@ class SacrificeAnalyzer(object):
         self.analyze_range['beta14'] = [self.cdict['cut2_b14_low'],self.cdict['cut2_b14_high']]
         self.analyze_range['itr'] = [self.cdict['cut2_itr_low'],1.0]
         self.analyze_range['posr'] = [self.cdict['r_low'],self.cdict['r_high']] 
+        self.analyze_range['posr3'] = [self.cdict['r_low'],self.cdict['r_high']] 
         self.analyze_range['nhits'] = [self.cdict['nhits_low'],self.cdict['nhits_high']] 
     
     def _DefinePrecuts(self):
-        udotr = "(posx*dirx + posy*diry + posz*dirz)/sqrt(posx**2 + posy**2 + posz**2)"
+        udotr = "(posx*dirx + posy*diry + (posz-108.0)*dirz)/sqrt(posx**2 + posy**2 + (posz-108.0)**2)"
         self.precuts=[]
         if self.cdict['r_high'] is not None:
             self.precuts.append("posr<"+str(self.cdict['r_high']))
@@ -155,9 +156,9 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
                 sys.exit(0)
         varname = var
         if var=='udotr':
-            var = "(posx*dirx + posy*diry + posz*dirz)/sqrt(posx**2 + posy**2 + posz**2)"
-        if var=='r3':
-            var = "(posr/6000.0)**3"
+            udotr = "(posx*dirx + posy*diry + (posz-108.0)*dirz)/sqrt(posx**2 + posy**2 + (posz-108.0)**2)"
+        if var=='posr3':
+            var = "(sqrt(posx**2 + posy**2 + (posz-108.0)**2)/6000.0)**3"
             xmin = (float(xmin)/6000.0)**3
             xmax = (float(xmax)/6000.0)**3
         
@@ -245,7 +246,7 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
         topnames = sortednames[(len(sortednames)-(topnumber+1)):len(sortednames)]
         self.cut1_mask['dcmask_cutnames'] = topnames
      
-    def ShowPlottedSacrifice(self,fittotal=True):
+    def ShowPlottedSacrifice(self,fittotal=True,title=None):
         sns.set_style("whitegrid")
         xkcd_colors = ['warm pink','slate blue', 'fluro green', 'brown', 'blue',
                 'yellowish orange', 'black', 'light eggplant', 'clay', 'leaf',
@@ -296,9 +297,10 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
                 if varindict is False: 
                     plt.xlabel(self.sacrifice_metadata["variable"],fontsize=32)
         plt.tick_params(labelsize=30)
-        plt.title("Fractional sacrifice of Tagged N16 Events \n"+\
-                "due to data cleaning, November 2017 scan",fontsize=36)
-        
+        if title is None:
+            plt.title("Fractional sacrifice due to data cleaning cuts",fontsize=36)
+        else: 
+            plt.title(title,fontsize=36)
         #plt.savefig("sacrifice_b14itr_%s.pdf"%(self.sacrifice_metadata["variable"]))
         plt.show()
         plt.close()
@@ -327,10 +329,10 @@ class ClassSacrificeAnalyzer(SacrificeAnalyzer):
         varname = var 
         if var=='udotr':
             var = "(posx*dirx + posy*diry + posz*dirz)/sqrt(posx**2 + posy**2 + posz**2)"
-        if var=='r3':
+        if var=='posr3':
             var = "(posr/6000.0)**3"
-            xmin = "(%s/6000.0)**3"%(str(xmin))
-            xmax = "(%s/6000.0)**3"%(str(xmax))
+            xmin = (float(xmin)/6000.0)**3
+            xmax = (float(xmax)/6000.0)**3
         print("######ESTIMATING CLASSIFIER SACRIFICE#######") 
         data = ROOT.TChain("output")
         for rf in self.rootfiles:
@@ -385,7 +387,7 @@ class ClassSacrificeAnalyzer(SacrificeAnalyzer):
         self.sacrifice_metadata = {"binwidth":((xmax-xmin)/float(nbins)),"variable":varname}
         #graphdict has the sacrifice information for each cut. Now, let's plot it.
 
-    def ShowPlottedSacrifice(self,fittotal=True):
+    def ShowPlottedSacrifice(self,fittotal=True,title=None):
         sns.set_style("whitegrid")
         xkcd_colors = ['slate blue', 'black', 'brown', 'blue',
                 'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
@@ -422,8 +424,10 @@ class ClassSacrificeAnalyzer(SacrificeAnalyzer):
                 if varindict is False: 
                     plt.xlabel(self.sacrifice_metadata["variable"],fontsize=32)
         plt.tick_params(labelsize=32)
-        plt.title("Fractional sacrifice of Tagged N16 Events \n"+\
-                "due to classifiers, November 2017 scan",fontsize=36)
+        if title is None:
+            plt.title("Fractional sacrifice due to classifiers",fontsize=36)
+        else: 
+            plt.title(title,fontsize=36)
         #plt.savefig("sacrifice_b14itr_%s.pdf"%(self.sacrifice_metadata["variable"]))
         plt.show()
         plt.close()

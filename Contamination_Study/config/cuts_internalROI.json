@@ -1,0 +1,20 @@
+{
+    "E_high": 5.6, 
+    "E_low": 4.0, 
+    "Z_high": 600, 
+    "Z_low": -600, 
+    "fitValid": True,
+    "isCal": True,
+    "bifurpath_DCmask": 135239930233058, 
+    "cut1_DCmask": 73500, 
+    "cut1_trigmask": 512, 
+    "cut2_b14_high": 0.95, 
+    "cut2_b14_low": -0.12, 
+    "cut2_itr_low": 0.55, 
+    "dcs_sonly": 0, 
+    "fits_only": 0, 
+    "path_trigmask": 5216, 
+    "r_high": 4300, 
+    "r_low": 0, 
+    "sacpath_DCmask": 117647744188642
+}

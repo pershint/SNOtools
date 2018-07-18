@@ -45,7 +45,10 @@ DBDIR = os.path.abspath(os.path.join(MAINDIR, "DB"))
 
 if __name__ == '__main__':
     #Get your run files to load
-    #Load the configuration file to use
+    #Load the setup JSON defining what plots/variables to use
+    #for sacrifice estimate
+    with open("./config/setup.json","r") as f:
+        setup_dict = json.load(f)
     if CALIBSACANALYSIS or BIFURCATE is True:
         ConfigParser = cp.ConfigParser(CONFIGDIR)
         print("CONFIGDIR: " + str(CONFIGDIR))
@@ -64,20 +67,33 @@ if __name__ == '__main__':
         print("NUMBER OF N16 FILES: " + str(len(calib_data)))
         if DEBUG is True:
             print("N16_ROOTS: " + str(calib_data))
-        ru.save_sacrifice_list(RESULTDIR,calib_data,"calibration_data_used.json")
-        SACRIFICE_VARIABLES = ['energy','udotr']#'posr']
-        sacrifice_results = {'cut1': {}, 'cut2': {}} 
+        ru.save_sacrifice_list(RESULTDIR,calib_data,"calibration_data_used.json") 
+        CUTS_TODO = setup_dict['CUTS_TODO']
+        SACRIFICE_VARIABLES = setup_dict['SACRIFICE_VARIABLES']
+        sacrifice_results = {} 
+        for cut in CUTS_TODO:
+            sacrifice_results[cut] = {} 
         for variable in SACRIFICE_VARIABLES:
-            DCSacs = sa.DCSacrificeAnalyzer(rootfiles=calib_data, cuts_dict=config_dict)
-            ClassSacs = sa.ClassSacrificeAnalyzer(rootfiles=calib_data, cuts_dict=config_dict)
-            DCSacs.AnalyzeData(var=variable,nbins=9)
-            sacrifice_results['cut1'][variable] = DCSacs.GetFitTotalAndUncertainties() 
-            if PLOTS is True: 
-                DCSacs.ShowPlottedSacrifice()
-            ClassSacs.AnalyzeData(var=variable,nbins=5)
-            sacrifice_results['cut2'][variable] = ClassSacs.GetFitTotalAndUncertainties() 
-            if PLOTS is True: 
-                ClassSacs.ShowPlottedSacrifice()
+            for cut in sacrifice_results:
+                if cut == 'cut1': 
+                    DCSacs = sa.DCSacrificeAnalyzer(rootfiles=calib_data, cuts_dict=config_dict)
+                    DCSacs.AnalyzeData(var=variable,nbins=9)
+                    sacrifice_results['cut1'][variable] = DCSacs.GetFitTotalAndUncertainties() 
+                    if PLOTS is True:
+                        tit="Fractional sacrifice due to data cleaning\n "+\
+                                "internal ROI, Nov 2017 N16 scan"
+                        DCSacs.ShowPlottedSacrifice(title=tit)
+                elif cut == 'cut2': 
+                    ClassSacs = sa.ClassSacrificeAnalyzer(rootfiles=calib_data, cuts_dict=config_dict)
+                    ClassSacs.AnalyzeData(var=variable,nbins=9)
+                    sacrifice_results['cut2'][variable] = ClassSacs.GetFitTotalAndUncertainties() 
+                    if PLOTS is True: 
+                        tit="Fractional sacrifice due to classifiers\n "+\
+                                "internal ROI, March 2018 N16 external"
+                        ClassSacs.ShowPlottedSacrifice(title=tit)
+                else:
+                    print("Cut type not supported.  Please use only cut1 and/or cut2"+\
+                            " in your setup file.")
         if NOSAVE is False:
             with open("%s/calib_cut_sacrifices_total.json"%(RESULTDIR),"w") as f:
                 json.dump(sacrifice_results,f,sort_keys=True,indent=4)

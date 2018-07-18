@@ -5,6 +5,7 @@
 import os,sys
 import copy
 import numpy as np
+from numpy import linalg as lg
 import matplotlib.pyplot as plt
 import playDarts as pd
 import scipy as sp
@@ -22,14 +23,32 @@ class ContaminationEstimator(object):
         self.d = Bifurcation_Summary['d']
 
         print("SACRIFICE SUMMARY: " + str(Sacrifice_Summary))
-        self.x1 = 1.0 - Sacrifice_Summary['cut1']['total_fracsac']
-        self.x2 = 1.0 - Sacrifice_Summary['cut2']['total_fracsac']
-        self.x1_unc = Sacrifice_Summary['cut1']['total_fracsac_unc']
-        self.x2_unc = Sacrifice_Summary['cut2']['total_fracsac_unc']
+        if Sacrifice_Summary is not None:
+            self.CalculateSacrifices()
 
         #Build the dictionary that will save various results from the
         #Contamination Estimator
         self.contamination_summary = {}
+   
+    def CalculateSacrifices(self):
+        x1_vals = []
+        x1_statuncs = []
+        x1_sysuncs = []
+        x2_vals = []
+        x2_statuncs = []
+        x2_sysuncs = []
+        for var in self.ss['cut1']:
+            x1_vals.append(self.ss['cut1'][var]['sacrifice'])
+            x1_statuncs.append(self.ss['cut1'][var]['stat_unc'])
+            x1_sysuncs.append(self.ss['cut1'][var]['sys_unc'])
+        for var in self.ss['cut2']:
+            x2_vals.append(self.ss['cut2'][var]['sacrifice'])
+            x2_statuncs.append(self.ss['cut2'][var]['stat_unc'])
+            x2_sysuncs.append(self.ss['cut2'][var]['sys_unc'])
+        self.x1 = 1.0 - np.average(x1_vals)
+        self.x2 = 1.0 - np.average(x2_vals)
+        self.x1_unc = lg.norm([lg.norm(x1_statuncs),lg.norm(x1_sysuncs)]) 
+        self.x2_unc = lg.norm([lg.norm(x2_statuncs),lg.norm(x2_sysuncs)]) 
     
     def SaveContaminationSummary(self,savedir,savename):
         savesacloc = savedir+"/"+savename
