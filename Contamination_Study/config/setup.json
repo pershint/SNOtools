@@ -1,4 +1,8 @@
 {
     "SACRIFICE_VARIABLES": ["posr3","udotr","energy"],
-    "CUTS_TODO": ["cut1","cut2"]
+    "CUTS_TODO": ["cut1"],
+    "BINNUM_CUT2": 15,
+    "BINNUM_CUT1": 15, 
+    "PLOT_TITLE_CUT2": "Fractional sacrifice due to classifiers\n  Ext. TonyZ Box, N16 Data, Mar. 2018 scan",
+    "PLOT_TITLE_CUT1": "Fractional sacrifice due to data cleaning\n  Ext. TonyZ Box, N16 Data, Mar. 2018 scan"
 }

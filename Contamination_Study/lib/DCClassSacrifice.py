@@ -23,12 +23,16 @@ class SacrificeAnalyzer(object):
         self.sac_percut = {} #Contains binned sacrifice for each of the highest cuts
         self.sac_percut_metadata = {} #Metadata, like variable fitted to and bin width
         self.total_sacrifice = {} #Total sacrifice, statistical unc, and sys unc.
+        self.nbins = 11
         self.analyze_range = {}
         self._SetAnalyzeRanges() 
         self._DefinePrecuts()
         self.xlabel_dict = {'energy': 'Energy (MeV)', 'udotr': r'$U . R$',
                 'posr3': r'$(R/R_{AV})^{3}$','posr':'Radius (mm)'}
-
+    
+    def SetBinNumber(self, nbins):
+        self.nbins = nbins + 1
+    
     def _flatline(self,x,b):
         return b
 
@@ -74,7 +78,7 @@ class SacrificeAnalyzer(object):
             if self.cdict['fitValid'] is True: self.precuts.append("fitValid==1")
             else: self.precuts.append("fitValid==0")
         if self.cdict['isCal'] is not None:
-            if self.cdict['fitValid'] is True: self.precuts.append("isCal==1")
+            if self.cdict['isCal'] is True: self.precuts.append("isCal==1")
             else: self.precuts.append("isCal==0")
         self.precuts.append("((dcFlagged&%s)==%s)" % (self.cdict["sacpath_DCmask"],\
             self.cdict["sacpath_DCmask"]))
@@ -137,7 +141,8 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
         super(DCSacrificeAnalyzer, self).__init__(rootfiles=rootfiles, cuts_dict=cuts_dict)
         self.cut1_mask = {'dcmask':self.cdict['cut1_DCmask'],'dcmask_cutnames': None}
 
-    def AnalyzeData(self,var="nhits",nbins=10,xmin=None,xmax=None):
+
+    def AnalyzeData(self,var="nhits",xmin=None,xmax=None):
         '''
         Takes in a rootfile and returns a PandaFrame object that can be used
         for plotting in matplotlib.  Returns nhits vs. fractional sacrifice for
@@ -186,11 +191,11 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
         plotmask[dcmask] = "total"
         #Now, make a new dictionary object: key is cutname, value is histogram
         if self.precuts is not None:
-            data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,nbins,xmin,xmax),
+            data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,self.nbins,xmin,xmax),
                     "%s"%(self.precuts),"goff")
 
         else:
-            data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,nbins,xmin,xmax),
+            data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,self.nbins,xmin,xmax),
                     "","goff")
         h_allevents = gDirectory.Get("h_allevents")
         h_allevents.Sumw2()
@@ -203,14 +208,14 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
                 cutint = cut
             graphdict={}
             vardat, fs,fs_unc =(), (), () #pandas wants ntuples
-            h_cut_FracFlagged = ROOT.TH1D("h_cut_FracFlagged", "h_cut_FracFlagged", nbins,xmin,xmax)
+            h_cut_FracFlagged = ROOT.TH1D("h_cut_FracFlagged", "h_cut_FracFlagged", self.nbins,xmin,xmax)
             h_cut_FracFlagged.Sumw2()
             if self.precuts is not None:
-                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
+                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,self.nbins,xmin,xmax),
                         "%s"%(self.precuts)+\
                              "&&((dcFlagged&%i)!=%i)" % (cutint,cutint),"goff")
             else:
-                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
+                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,self.nbins,xmin,xmax),
                         "((dcFlagged&%i)!=%i)" % (cutint,cutint),"goff")
             h_flagged = gDirectory.Get("h_flagged")
             h_flagged.Sumw2()
@@ -228,7 +233,7 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
             del h_cut_FracFlagged
             del h_flagged
         #graphdict has the sacrifice information for each cut. Now, let's plot it.
-        self.sacrifice_metadata = {"binwidth":((xmax-xmin)/float(nbins)),"variable":varname}
+        self.sacrifice_metadata = {"binwidth":((xmax-xmin)/float(self.nbins)),"variable":varname}
         self._GetTopSacs()
         self._DeleteEmptyBins()
 
@@ -248,8 +253,8 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
      
     def ShowPlottedSacrifice(self,fittotal=True,title=None):
         sns.set_style("whitegrid")
-        xkcd_colors = ['warm pink','slate blue', 'fluro green', 'brown', 'blue',
-                'yellowish orange', 'black', 'light eggplant', 'clay', 'leaf',
+        xkcd_colors = ['black','slate blue', 'fluro green', 'brown', 'blue',
+                'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'leaf',
                 'aqua blue','vomit', 'red','twilight']
         sns.set_palette(sns.xkcd_palette(xkcd_colors))#,len(self.sac_percut)))
         if self.cut1_mask['dcmask_cutnames'] is None:
@@ -284,7 +289,9 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
                         "in this region to fit a straight line.")
                 raise
             plt.axhline(popt, linewidth=3, alpha=0.8, color='k',label= r'fit: $\mu = %f,unc = %f$' % (float(popt[0]), float(stdev[0])))
-        plt.legend(loc=3)
+        legend = plt.legend(loc=3,frameon=1)
+        frame = legend.get_frame()
+        frame.set_facecolor("white")
         plt.yscale("log")
         plt.ylabel("Fractional sacrifice",fontsize=32)
       
@@ -309,7 +316,7 @@ class ClassSacrificeAnalyzer(SacrificeAnalyzer):
     def __init__(self, rootfiles=None, cuts_dict=None):
         super(ClassSacrificeAnalyzer, self).__init__(rootfiles=rootfiles, cuts_dict=cuts_dict)
 
-    def AnalyzeData(self,var="nhits",nbins=10,xmin=None,xmax=None):
+    def AnalyzeData(self,var="nhits",xmin=None,xmax=None):
         '''
         Takes in a rootfile and returns a PandaFrame object that can be used
         for plotting in matplotlib.  Returns var vs. fractional sacrifice for
@@ -338,11 +345,12 @@ class ClassSacrificeAnalyzer(SacrificeAnalyzer):
         for rf in self.rootfiles:
             data.Add(rf)
         #Now, make a new dictionary object: key is cutname, value is histogram
+        print("PRECUTS IN CLASSIFIER SAC ESTIMATOR: " + str(self.precuts))
         if self.precuts is not None:
-            data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,nbins,xmin,xmax),
+            data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,self.nbins,xmin,xmax),
                     "%s" % (self.precuts),"goff")
         else:
-            data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,nbins,xmin,xmax),
+            data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,self.nbins,xmin,xmax),
                     "","goff")
         h_allevents = gDirectory.Get("h_allevents")
         h_allevents.Sumw2()
@@ -351,19 +359,19 @@ class ClassSacrificeAnalyzer(SacrificeAnalyzer):
         for cut in labeldict:
             graphdict={}
             vardat, fs,fs_unc =(), (), () #pandas wants ntuples
-            h_cut_FracFlagged = ROOT.TH1D("h_cut_FracFlagged", "h_cut_FracFlagged", nbins,xmin,xmax)
+            h_cut_FracFlagged = ROOT.TH1D("h_cut_FracFlagged", "h_cut_FracFlagged", self.nbins,xmin,xmax)
             h_cut_FracFlagged.Sumw2()
             if cut == "b14_low":
-                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
+                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,self.nbins,xmin,xmax),
                         "%s&&beta14<%s"%(self.precuts,str(self.cdict['cut2_b14_low'])),"goff")
             if cut == "b14_high":
-                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
+                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,self.nbins,xmin,xmax),
                         "%s&&beta14>%s"%(self.precuts,str(self.cdict['cut2_b14_high'])) ,"goff")
             if cut == "itr_low":
-                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
+                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,self.nbins,xmin,xmax),
                         "%s&&itr<%s"%(self.precuts,str(self.cdict['cut2_itr_low'])),"goff")
             if cut == "total":
-                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,nbins,xmin,xmax),
+                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,self.nbins,xmin,xmax),
                         "%s&&(beta14<%s || beta14>%s || itr<%s)"%(self.precuts,
                             str(self.cdict['cut2_b14_low']),str(self.cdict['cut2_b14_high']),
                             str(self.cdict['cut2_itr_low'])) ,"goff")
@@ -383,8 +391,9 @@ class ClassSacrificeAnalyzer(SacrificeAnalyzer):
             self.sac_percut[cut]= pandas.DataFrame(data=graphdict)
             del h_cut_FracFlagged
             del h_flagged
+        print(self.sac_percut) 
         self._DeleteEmptyBins()
-        self.sacrifice_metadata = {"binwidth":((xmax-xmin)/float(nbins)),"variable":varname}
+        self.sacrifice_metadata = {"binwidth":((xmax-xmin)/float(self.nbins)),"variable":varname}
         #graphdict has the sacrifice information for each cut. Now, let's plot it.
 
     def ShowPlottedSacrifice(self,fittotal=True,title=None):

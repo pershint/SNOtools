@@ -77,20 +77,18 @@ if __name__ == '__main__':
             for cut in sacrifice_results:
                 if cut == 'cut1': 
                     DCSacs = sa.DCSacrificeAnalyzer(rootfiles=calib_data, cuts_dict=config_dict)
-                    DCSacs.AnalyzeData(var=variable,nbins=9)
+                    DCSacs.SetBinNumber(setup_dict["BINNUM_CUT1"])
+                    DCSacs.AnalyzeData(var=variable)
                     sacrifice_results['cut1'][variable] = DCSacs.GetFitTotalAndUncertainties() 
                     if PLOTS is True:
-                        tit="Fractional sacrifice due to data cleaning\n "+\
-                                "internal ROI, Nov 2017 N16 scan"
-                        DCSacs.ShowPlottedSacrifice(title=tit)
+                        DCSacs.ShowPlottedSacrifice(title=setup_dict["PLOT_TITLE_CUT1"])
                 elif cut == 'cut2': 
                     ClassSacs = sa.ClassSacrificeAnalyzer(rootfiles=calib_data, cuts_dict=config_dict)
-                    ClassSacs.AnalyzeData(var=variable,nbins=9)
+                    ClassSacs.SetBinNumber(setup_dict["BINNUM_CUT2"])
+                    ClassSacs.AnalyzeData(var=variable)
                     sacrifice_results['cut2'][variable] = ClassSacs.GetFitTotalAndUncertainties() 
                     if PLOTS is True: 
-                        tit="Fractional sacrifice due to classifiers\n "+\
-                                "internal ROI, March 2018 N16 external"
-                        ClassSacs.ShowPlottedSacrifice(title=tit)
+                        ClassSacs.ShowPlottedSacrifice(title=setup_dict["PLOT_TITLE_CUT2"])
                 else:
                     print("Cut type not supported.  Please use only cut1 and/or cut2"+\
                             " in your setup file.")
@@ -115,11 +113,16 @@ if __name__ == '__main__':
         cut_sac_summary = None
         try:
             bifurcation_summary = ru.LoadJson(RESULTDIR,"bifurcation_boxes.json")
+        except IOError:
+            print("Bifurcation Summary loading error.  Was this "+\
+                    " analysis run?")
+            pass
+        try:
             cut_sac_summary = ru.LoadJson(RESULTDIR,"calib_cut_sacrifices_total.json")
         except IOError:
-            print("Bifurcation or Cut Sacrifice Summary loading error.  Were these"+\
-                    "analyses run?")
-            raise
+            print("Cut sacrifice Summary loading error.  Was this "+\
+                    " analysis run?")
+            pass
         if LOWECONTAM is True:
             print("CALCULATING CONTAMINATION ASSUMING LOW ENERGY REGION")
             CE = ca.LowEContamination(bifurcation_summary,cut_sac_summary)

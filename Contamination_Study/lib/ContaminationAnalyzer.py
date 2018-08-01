@@ -17,14 +17,14 @@ class ContaminationEstimator(object):
     def __init__(self, Bifurcation_Summary=None, Sacrifice_Summary=None):
         self.ss = Sacrifice_Summary
 
+        print("SACRIFICE SUMMARY: " + str(Sacrifice_Summary))
+        if Sacrifice_Summary is not None:
+            self.CalculateSacrifices()
+        
         self.a = Bifurcation_Summary['a']
         self.b = Bifurcation_Summary['b']
         self.c = Bifurcation_Summary['c']
         self.d = Bifurcation_Summary['d']
-
-        print("SACRIFICE SUMMARY: " + str(Sacrifice_Summary))
-        if Sacrifice_Summary is not None:
-            self.CalculateSacrifices()
 
         #Build the dictionary that will save various results from the
         #Contamination Estimator
@@ -37,18 +37,30 @@ class ContaminationEstimator(object):
         x2_vals = []
         x2_statuncs = []
         x2_sysuncs = []
-        for var in self.ss['cut1']:
-            x1_vals.append(self.ss['cut1'][var]['sacrifice'])
-            x1_statuncs.append(self.ss['cut1'][var]['stat_unc'])
-            x1_sysuncs.append(self.ss['cut1'][var]['sys_unc'])
-        for var in self.ss['cut2']:
-            x2_vals.append(self.ss['cut2'][var]['sacrifice'])
-            x2_statuncs.append(self.ss['cut2'][var]['stat_unc'])
-            x2_sysuncs.append(self.ss['cut2'][var]['sys_unc'])
+        try:
+            for var in self.ss['cut1']:
+                x1_vals.append(self.ss['cut1'][var]['sacrifice'])
+                x1_statuncs.append(self.ss['cut1'][var]['stat_unc'])
+                x1_sysuncs.append(self.ss['cut1'][var]['sys_unc'])
+        except KeyError:
+            print("No sacrifice information for cut 1.  Continuing to get cut 2 info.")
+            pass
+        try:
+            for var in self.ss['cut2']:
+                x2_vals.append(self.ss['cut2'][var]['sacrifice'])
+                x2_statuncs.append(self.ss['cut2'][var]['stat_unc'])
+                x2_sysuncs.append(self.ss['cut2'][var]['sys_unc'])
+        except KeyError:
+            print("No sacrifice information for cut 2.  Continuing to get sacrifice summary")
+            pass
         self.x1 = 1.0 - np.average(x1_vals)
         self.x2 = 1.0 - np.average(x2_vals)
         self.x1_unc = lg.norm([lg.norm(x1_statuncs),lg.norm(x1_sysuncs)]) 
         self.x2_unc = lg.norm([lg.norm(x2_statuncs),lg.norm(x2_sysuncs)]) 
+        print("CUT 1 ACCEPTANCE: " + str(self.x1))
+        print("CUT 1 ACC. UNC: " + str(self.x1_unc))
+        print("CUT 2 ACCEPTANCE: " + str(self.x2))
+        print("CUT 2 ACC. UNC: " + str(self.x2_unc))
     
     def SaveContaminationSummary(self,savedir,savename):
         savesacloc = savedir+"/"+savename
