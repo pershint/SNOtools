@@ -77,6 +77,9 @@ class SacrificeAnalyzer(object):
         if self.cdict['fitValid'] is not None: 
             if self.cdict['fitValid'] is True: self.precuts.append("fitValid==1")
             else: self.precuts.append("fitValid==0")
+        if self.cdict['AVudotrCut'] is not None:
+            if self.cdict['AVudotrCut'] is True:
+                self.precuts.append("(udotr > (1.0 - 12 *((posr3-0.69)**2)))")
         if self.cdict['isCal'] is not None:
             if self.cdict['isCal'] is True: self.precuts.append("isCal==1")
             else: self.precuts.append("isCal==0")
@@ -236,6 +239,7 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
         self.sacrifice_metadata = {"binwidth":((xmax-xmin)/float(self.nbins)),"variable":varname}
         self._GetTopSacs()
         self._DeleteEmptyBins()
+        print self.sac_percut
 
     def _GetTopSacs(self,topnumber=7):
         dcmask = self.cdict['cut1_DCmask']
@@ -250,7 +254,7 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
         sortednames = [x for _,x in sorted(zip(sacrifices,names))]
         topnames = sortednames[(len(sortednames)-(topnumber+1)):len(sortednames)]
         self.cut1_mask['dcmask_cutnames'] = topnames
-     
+
     def ShowPlottedSacrifice(self,fittotal=True,title=None):
         sns.set_style("whitegrid")
         xkcd_colors = ['black','slate blue', 'fluro green', 'brown', 'blue',
@@ -273,7 +277,9 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
                             yerr=self.sac_percut[cut].fs_uncertainty, linestyle='none',
                             marker='o', label=cut, capsize=0, elinewidth=2, markersize=8)
                 else:
+                    print("CUT GOING INTO ALL OTHER CUTS: " + str(cut))
                     fracsum.append(self.sac_percut[cut].fractional_sacrifice)
+                    print("FRACSUM ARRAY: " + str(fracsum))
                     fracuncsum.append(self.sac_percut[cut].fs_uncertainty)
             plt.errorbar(x=self.sac_percut[cut].vardat,y=sum(fracsum),yerr=sum(fracuncsum),
                     linestyle='none',marker='o', capsize=0, elinewidth=2, label='All other cuts', markersize=8)

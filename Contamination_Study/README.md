@@ -3,21 +3,18 @@ Fit classifiers for use in the bifurcation analysis.
 
 
 Then, a sacrifice analysis, bifurcation analysis, and contamination analysis
- can be run using RunStudy.py.
+ can be run using main.py.
 
 Some configuration paramters can be adjusted via command line (energy is only
 supported for now).  To see available parameters and usage, run
 
-python RunStudy.py --help
+python main.py --help
 
 By default, analyses run will be output to /output/results_j0 .  The job
 number can be changed from the command line, or the output can be sent to
 a different file all together.
 
-Note that the python file has configurables inside it for looking at DC only,
-B14 only, specific run numbers, etc.
-
-GUIDE TO A QUICK START OF ESTIMATING SACRIFICE/CONTAMINATION
+GUIDE TO A QUICK START OF ESTIMATING DC SACRIFICE
 
 Preparation steps
 
@@ -25,46 +22,55 @@ i) Define your cuts and regions of interest for estimating sacrifice/contaminati
 in a config file. The different configurables have a description in 
 cuts_default_notes.txt.  A good example structure for the json format is in
 cuts_default.json.  Tell the program to use your config file by giving the file 
-location to the --config flag.
+name to the --configfile flag.
 
-ii) Place your N16 calibration data and physics_data to estimate the contamination of
-into the /ntuples/N16 and /ntuples/physics_data/ directories, respectively.
+ii) Place all of your calibration data ntuples into a single directory.  When
+running main.py, you will want to give the directory path using the --calibdir flag. 
 
-iii) For each N16 run used, add an entry to one of the N16 run info JSON files in
-/DB/.  You can also write a new file with the same format as the others and it
-will automatically be read in if the file name has the format /DB/N16_{whatever}.json
+iii) For the instrumental contamination estimate, place all of your calibration
+data ntuples into another single directory.  When running main.py, you will want to
+give this directory path using the --analysis dir flag
+
+iv) Set up your plotting preferences and variables you want to calculate the
+DC sacrifice distribution for using ./config/setup.json.  For the DC sacrifice,
+you want "CUTSTODO" to have ["cut1"] only, and common sacrifice variables used
+for the water analysis are "posr3", "udotr", and "energy".  Note that if you
+want to use "posr3", your data must have the "posr3" entry added to the ntuples
+using the subtupler code (see ./misc/subtupleMaker\_N16.cpp for an example
+of the subtuple processor you could use).
+
 
 ANALYSES
 
 Sacrifice: To calculate the sacrifice of physics events in N16 data, do:
 
-python RunStudy.py --sacrifice
+python main.py --calibsacrifice --calibdir /path/to/calibntuples/ --configfile
+theconfigfile.json --plots
 
-The program will take all files in the calibration directory either specified or
-in the default location and estimate the sacrifice due to data cleaning cuts in
-the specified energy region, z-region, and radial region.  
 
 Results of the sacrifice for all runs and on a run-by-run detail are saved to the
-specified results directory.  
+specified results directory. If --plots is given, the distribution of the 
+DC sacrifice for each variable defined in setup.json will be shown. 
 
 Bifurcation: To generate the "pass:pass", "pass:fail", "fail:pass", and "fail:fail"
 values for the data cleaning cuts and fit classifiers, do:
 
-python RunStudy.py --bifurcation
+python main.py --analysisdir /path/to/physics_data/ --configfile
+theconfigfile.json --bifurcate 
 
 The values for the total number of events analyzed, the total number of events that
 passed the defined pathological cut masks, and the number of events that go into
-each bifurcation box are output to "bifurcation_boxes.json" in the results directory.
+each bifurcation box are output to "bifurcation_boxes.json" in the results directory output.
 
 Contamination estimate: First you must either:
 
-1) Also give the --sacrifice and --contamination flags when performing this analysis
+1) Also give the --calibsacrifice and --bifurcate flags when performing this analysis
 2) Give a --jobnum that corresponds to a directory in /output/results_j{JOBNUM} that
 already has information from the sacrifice and contamination estimates present.
 
 To run the contamination study, do:
 
-python RunStudy.py --contamination
+python main.py --contamination
 
 The contamination due to each cut branch is then calculated using the estimated
 sacrifice and bifurcation box analyses.  A description of the algorithm for calculating
@@ -85,3 +91,11 @@ of y1y2 from the two over-constrained equations
 "y1y2_to_CL": Gives an upper-limit on the value for y1y2 to the specified "CL" in 
 the JSON file.  Found by re-shooting values for the a,b,c,d and acceptance values
 based on their uncertainties and finding the spread of y1y2 due to these.
+
+A second approache to calculating the instrumental contamination in the presence
+of a large amount of signal (as is common for background ROIs at lower energies
+with high amounts of Cherenkov events) can be done with
+
+python main.py --contamination --lowE
+
+

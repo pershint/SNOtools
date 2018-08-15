@@ -8,6 +8,7 @@
     "Z_low": -600, 
     "fitValid": true,
     "isCal": true,
+    "AVudotrCut": false, 
     "bifurpath_DCmask": 0, 
     "cut1_DCmask": 81790, 
     "cut1_trigmask": 0, 

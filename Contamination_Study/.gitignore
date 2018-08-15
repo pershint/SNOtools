@@ -1,4 +1,4 @@
+/output/*
 /ntuples/*
-/lib/*.pyc
-/lib/plots/*.pyc
-/misc/*.pyc
+*.pyc
+*__pycache__*

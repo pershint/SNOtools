@@ -1,20 +1,60 @@
 
 Description of different cut configuration toggles
 
+The Contamination_Study analysis code can serve two purposes:
+  - Estimating the data cleaning sacrifice using calibration data
+  - Conducting an instrumental contamination study using a bifurcated analysis
+
+Depending on your ultimate end-game, your config file will want to be configured
+differently.  Here is a guide for helping with this process/building your own
+config file.
+
 ###----------PATHOLOGICAL CUTS FOR SACRIFICE/CONTAMINATION-----------###
 Events that are considered pathological are not included in either the
                sacrifice or contamination studies.
+fitValid: if true, only events with a valid reconstruction will be used
+to estimate the sacrifice with calibration data/instrumental contamination with
+analysis data.
 
-sacpath_DCmask: pathological cuts applied before estimating sacrifice
-(For full N16 sacrifice analysis, you'll want this to be set to zero.  For the
-bifurcation analysis sacrifice, apply the same path as bifurpath_DCmask)
+isCal: if true, only events with the FECD PMT hit in the calibration data
+will be used to estimate the sacrifice with calibration data. 
+(You want this to be true if you're using N16 calibration data)
 
-bifurpath_DCmask: pathological cuts used in making bifurcation boxes.  If
-an event has any of these flags, it will not be put into the a,b,c,d boxes.
+E_high, E_low: Defines the energy range for events considered for sacrifice
+analysis
+nhits_high, nhits_low: Defines the nhit range for events consiered for
+sacrifice/contamination analyses
+Z_high,Z_low: Defines the z-range, in centimeters, for events considered for
+sacrifice/contamination studies
+r_high, r_low: Defines the radius, in millimeters, for events considered for
+sacrifice/contamination studies
+udotr_high, udotr_low: Defines the u.r value range for events considered for
+the sacrifice/contamination studies
 
-path_trigmask: default is esumhi, esumlo, ped, pgt
-#NOTE: Pathological cuts are NOT applied to Monte Carlo datasets!  So the
-#Number of nonpathological events is the number passing energy/position cuts
+sacpath_DCmask: pathological cuts applied before estimating sacrifice using
+calibration data. Any
+event with one of the flags in this mask will not be used in the sacrifice/
+contamination studies.
+
+(Relevant for contamination study only. For the N16 DC sacrifice analysis,
+ you'll want sacpath_DCmask to be set to zero.)
+
+
+bifurpath_DCmask: pathological cuts used in making bifurcation boxes with
+analysis data.  If an event has any of these flags, it will not be put
+ into the a,b,c,d boxes.
+
+(Relevant for contamination study only. For the N16 DC sacrifice analysis,
+ you'll want bifurpath_DCmask to be set to zero.)
+
+(If estimating the sacrifice for use in the contamination study,
+you'll want this mask to be the sacpath and bifurpath to be the same DCmask
+unless you know why you want them to be different.)
+
+path_trigmask: Any events with a flag from this trigger mask
+ will not be considered/used for the sacrifice/contamination studies
+(ND contamination analysis default is esumhi, esumlo, ped, pgt)
+(When doing DC sacrifice studies, you'll want this to be set to zero)
 
 ###---------CUTS AND TOGGLES FOR SACRIFICE & BIFURCATION PROCESS-----------------###
 cut1_DCmask: Use rat-tools/DataCleaningTools/dcflags.py to make your mask.

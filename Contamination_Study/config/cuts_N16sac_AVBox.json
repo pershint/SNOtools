@@ -8,8 +8,9 @@
     "Z_low": -600, 
     "fitValid": true,
     "isCal": true,
+    "AVudotrCut": true, 
     "bifurpath_DCmask": 0, 
-    "cut1_DCmask": 81790, 
+    "cut1_DCmask": 81534, 
     "cut1_trigmask": 0, 
     "cut2_b14_high": 0.95, 
     "cut2_b14_low": -0.12, 
@@ -17,7 +18,7 @@
     "path_trigmask": 0, 
     "r_high": 5800, 
     "r_low": 5300,
-    "udotr_low": -1.0,
+    "udotr_low": 0.4,
     "udotr_high": 1.0, 
     "sacpath_DCmask": 0
 }
