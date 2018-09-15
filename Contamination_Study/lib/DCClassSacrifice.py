@@ -223,10 +223,10 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
             h_flagged = gDirectory.Get("h_flagged")
             h_flagged.Sumw2()
             h_cut_FracFlagged.Divide(h_flagged,h_allevents,1.,1.,"b")
-            for i in xrange(h_cut_FracFlagged.GetNbinsX()):
+            for i in xrange(int(h_cut_FracFlagged.GetNbinsX()+1)):
                 if i==0:
                     continue
-                vardat =  vardat + (float(h_cut_FracFlagged.GetBinWidth(i)) + float(h_cut_FracFlagged.GetBinLowEdge(i)),)
+                vardat =  vardat + ((float(h_cut_FracFlagged.GetBinWidth(i))/2.0) + float(h_cut_FracFlagged.GetBinLowEdge(i)),)
                 fs = fs + (h_cut_FracFlagged.GetBinContent(i),)
                 fs_unc = fs_unc + (h_cut_FracFlagged.GetBinError(i),)
             graphdict["vardat"] = vardat
@@ -385,10 +385,10 @@ class ClassSacrificeAnalyzer(SacrificeAnalyzer):
             h_flagged = gDirectory.Get("h_flagged")
             h_flagged.Sumw2()
             h_cut_FracFlagged.Divide(h_flagged,h_allevents,1.,1.,"b")
-            for i in xrange(int(h_cut_FracFlagged.GetNbinsX())):
+            for i in xrange(int(h_cut_FracFlagged.GetNbinsX())+1):
                 if i==0:
                     continue
-                vardat =  vardat + (float(h_cut_FracFlagged.GetBinWidth(i)) + float(h_cut_FracFlagged.GetBinLowEdge(i)),)
+                vardat =  vardat + ((float(h_cut_FracFlagged.GetBinWidth(i))/2.0) + float(h_cut_FracFlagged.GetBinLowEdge(i)),)
                 fs = fs + (h_cut_FracFlagged.GetBinContent(i),)
                 fs_unc = fs_unc + (h_cut_FracFlagged.GetBinError(i),)
             graphdict["vardat"] = vardat

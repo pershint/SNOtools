@@ -115,19 +115,21 @@ def PrepData_ClassSac(datafiles=[],MCfiles=[],var="nhits",precuts=None,nbins=10,
             h_cut_FracFlagged.Divide(h_flagged,h_dallevents,1.,1.,"b")
         if label == "MC total": 
             h_cut_FracFlagged.Divide(h_flagged,h_mallevents,1.,1.,"b")
-        for i in xrange(int(h_cut_FracFlagged.GetNbinsX())):
-            #jif i==0:
-            #    continue
-            vardat =  vardat + (float(h_cut_FracFlagged.GetBinWidth(i)) + float(h_cut_FracFlagged.GetBinLowEdge(i)),)
+        for i in xrange(int(h_cut_FracFlagged.GetNbinsX())+1):
+            if i==0:
+                continue
+                vardat =  vardat + ((float(h_cut_FracFlagged.GetBinWidth(i))/2.0) + float(h_cut_FracFlagged.GetBinLowEdge(i)),)
             fs = fs + (h_cut_FracFlagged.GetBinContent(i),)
             fs_unc = fs_unc + (h_cut_FracFlagged.GetBinError(i),)
         h_fracClean = ROOT.TH1D("h_fracClean", "h_fracClean", nbins, xmin, xmax)
-        for j in xrange(nbins):
+        for j in xrange(int(h_cut_FracFlagged.GetNbinsX())+1):
+            if j==0:
+                continue
             h_fracClean.SetBinContent(j,1.0)
         h_fracClean.Add(h_cut_FracFlagged,-1.0)
-        for i in xrange(int(h_fracClean.GetNbinsX())):
-            #jif i==0:
-            #    continue
+        for i in xrange(int(h_fracClean.GetNbinsX())+1):
+            if i==0:
+                continue
             fa = fa + (h_fracClean.GetBinContent(i),)
         graphdict["vardat"] = vardat
         graphdict["fractional_sacrifice"] = fs
