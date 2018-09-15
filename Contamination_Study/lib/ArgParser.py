@@ -27,14 +27,16 @@ parser.add_argument('--analysisdir', dest='ANALYSISDIR',action='store',
         type=str,help='Specify the directory where the analysis files'+\
                 'are stored.  Will read all files ending with .ntuple.root'+\
                 'from the directory. Default: ./ntuples/physics_data/')
-parser.add_argument('--calibdir', dest='CALIBDIR',action='store',
+parser.add_argument('--calibdir_data', dest='CALIBDIR',action='store',
         type=str,help='Specify the directory where the calibration files'+\
                 'are stored.  Will read all files ending with .ntuple.root'+\
-                'from the directory. Default: ./ntuples/N16/')
+                'from the directory. Default: ./ntuples/calibration/')
+parser.add_argument('--calibdir_mc', dest='CALIBMCDIR',action='store',
+        type=str,help='Specify the directory where the simulated calibration files '+\
+                'are stored.  Will read all files ending with .ntuple.root'+\
+                'from the directory. Default: ./ntuples/calibration/MC/')
 parser.add_argument('--calibsacrifice', dest='CALIBSACANALYSIS',action='store_true',
         help='Runs the sacrifice estimate processor on calibration data selected')
-parser.add_argument('--signalmcsacrifice', dest='MCSACANALYSIS',action='store_true',
-        help='Runs the sacrifice estimate processor on signal MC files')
 parser.add_argument('--bifurcate', dest='BIFURCATE',action='store_true',
         help='Run the bifurcation analysis on files in --analysisdir.')
 parser.add_argument('--contamination', dest='ESTIMATECONTAMINATION',
@@ -52,8 +54,9 @@ parser.add_argument('--zrange', dest='ZRANGE', action='store',nargs='+',
 THISDIR = os.path.dirname(__file__)
 pd_default = os.path.abspath(os.path.join(THISDIR,"..", "ntuples", "physics_data"))
 cal_default = os.path.abspath(os.path.join(THISDIR,"..", "ntuples","calibration"))
+calmc_default = os.path.abspath(os.path.join(THISDIR,"..", "ntuples", "calibration", "mc"))
 parser.set_defaults(NOSAVE=False,debug=False,CALIBSACANALYSIS=False,
         MCSACANALYSIS=False,BIFURCATE=False,ESTIMATECONTAMINATION=False,
         JOBNUM=0,erange=None,ANALYSISDIR=pd_default,CONFIGFILE='cuts_default.json', 
-        LOWECONTAM=False,CALIBDIR=cal_default,ZRANGE=None,PLOTS=False)
+        LOWECONTAM=False,CALIBDIR=cal_default,CALIBMCDIR=calmc_default,ZRANGE=None,PLOTS=False)
 args = parser.parse_args()

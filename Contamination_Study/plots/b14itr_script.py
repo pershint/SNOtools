@@ -12,13 +12,15 @@ if __name__=='__main__':
     #r_av3 = "(sqrt((posx**2 + posy**2 + (posz-108.0)**2))/6000.0)**3"
     #n16_data = glob.glob("/home/onetrueteal/share/N16/Data/Nov2017_N16/subtuple/*") 
     #n16_MC = glob.glob("/home/onetrueteal/share/N16/MC/Nov2017_IntScan/subtuple/*") 
-    n16_data = glob.glob("/home/onetrueteal/share/N16/Data/Mar2018_N16EXT/subtuple/*") 
-    n16_MC = glob.glob("/home/onetrueteal/share/N16/MC/Mar2017_ExtScan/subtuple/*") 
+    n16_data = glob.glob("/home/onetrueteal/share/SNOPlus/N16/Data/Mar2018_N16/subtuple/*") 
+    n16_MC = glob.glob("/home/onetrueteal/share/SNOPlus/N16/MC/Mar2018_ExtScan/subtuple/*") 
+    print("N16 DATA: " + str(n16_data))
+    print("N15 MC: " + str(n16_MC))
     pre = "energy>3.0&&energy<5.6&&posr>5569&&posr<5793&&udotr>0.5"
     #pre=None
     dat, meta = sbp.PrepData_ClassSac(datafiles=n16_data, MCfiles=n16_MC, 
-            var = 'energy', 
-            precuts = pre, nbins=13, xmin = 3.0, xmax = 5.6)
+            var = 'posr3', 
+            precuts = pre, nbins=13, xmin = 0.8, xmax = 0.9)
     sac_title="Fractional sacrifice due to classifiers \n"+\
             " Ext. Bkg. Non-PMT ROI (in AV), Data-MC comparison, Mar. 2018 N16 scan"
     acc_title="Fractional acceptance of events by classifiers \n"+\
@@ -27,8 +29,8 @@ if __name__=='__main__':
             " Ext. Bkg. Non-PMT ROI (in AV), Mar. 2018 N16 scan"
     #xlabel=r"$U.R$" 
     #xlabel="Nhit"
-    xlabel="Energy (MeV)" 
-    #xlabel=r"$(R/R_{AV})^{3}$"
+    #xlabel="Energy (MeV)" 
+    xlabel=r"$(R/R_{AV})^{3}$"
     print(dat)
     ratio = pandas.Series(dat["Data total"].fractional_acceptance /
             dat["MC total"].fractional_acceptance) 

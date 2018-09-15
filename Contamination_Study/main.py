@@ -19,6 +19,7 @@ ERANGE=args.ERANGE
 ZRANGE=args.ZRANGE
 JOBNUM=args.JOBNUM
 CALIBDIR=args.CALIBDIR
+CALIBMCDIR=args.CALIBMCDIR
 ANALYSISDIR=args.ANALYSISDIR
 
 import numpy as np
@@ -64,37 +65,41 @@ if __name__ == '__main__':
 
     if CALIBSACANALYSIS is True:
         calib_data = glob.glob("%s/*.ntuple.root"%(CALIBDIR))
+        calib_mc = glob.glob("%s/*.ntuple.root"%(CALIBMCDIR))
         print("NUMBER OF N16 FILES: " + str(len(calib_data)))
+        print("NUMBER OF N16 MC FILES: " + str(len(calib_mc)))
         if DEBUG is True:
             print("N16_ROOTS: " + str(calib_data))
-        ru.save_sacrifice_list(RESULTDIR,calib_data,"calibration_data_used.json") 
+        ru.save_sacrifice_list(RESULTDIR,calib_data,"calibration_data_used.json")
+        ru.save_sacrifice_list(RESULTDIR,calib_mc,"calibration_MCdata_used.json") 
         CUTS_TODO = setup_dict['CUTS_TODO']
         SACRIFICE_VARIABLES = setup_dict['SACRIFICE_VARIABLES']
-        sacrifice_results = {} 
+        DCsac_ClassComp_results = {} 
         for cut in CUTS_TODO:
-            sacrifice_results[cut] = {} 
+            DCsac_ClassComp_results[cut] = {} 
         for variable in SACRIFICE_VARIABLES:
-            for cut in sacrifice_results:
+            for cut in DCsac_ClassComp_results:
                 if cut == 'cut1': 
-                    DCSacs = sa.DCSacrificeAnalyzer(rootfiles=calib_data, cuts_dict=config_dict)
+                    DCSacs = sa.DCSacrificeAnalyzer(rootfiles_data=calib_data, cuts_dict=config_dict)
                     DCSacs.SetBinNumber(setup_dict["BINNUM_CUT1"])
                     DCSacs.AnalyzeData(var=variable)
-                    sacrifice_results['cut1'][variable] = DCSacs.GetFitTotalAndUncertainties() 
+                    DCsac_ClassComp_results['cut1'][variable] = DCSacs.GetFitTotalAndUncertainties() 
                     if PLOTS is True:
                         DCSacs.ShowPlottedSacrifice(title=setup_dict["PLOT_TITLE_CUT1"])
                 elif cut == 'cut2': 
-                    ClassSacs = sa.ClassSacrificeAnalyzer(rootfiles=calib_data, cuts_dict=config_dict)
+                    ClassSacs = sa.DataMCClassAnalyzer(rootfiles_data=calib_data,
+                            rootfiles_mc=calib_mc, cuts_dict=config_dict)
                     ClassSacs.SetBinNumber(setup_dict["BINNUM_CUT2"])
                     ClassSacs.AnalyzeData(var=variable)
-                    sacrifice_results['cut2'][variable] = ClassSacs.GetFitTotalAndUncertainties() 
+                    DCsac_ClassComp_results['cut2'][variable] = ClassSacs.GetFitTotalAndUncertainties() 
                     if PLOTS is True: 
-                        ClassSacs.ShowPlottedSacrifice(title=setup_dict["PLOT_TITLE_CUT2"])
+                        ClassSacs.PlotRatio(title=setup_dict["PLOT_TITLE_CUT2"])
                 else:
                     print("Cut type not supported.  Please use only cut1 and/or cut2"+\
                             " in your setup file.")
         if NOSAVE is False:
-            with open("%s/calib_cut_sacrifices_total.json"%(RESULTDIR),"w") as f:
-                json.dump(sacrifice_results,f,sort_keys=True,indent=4)
+            with open("%s/calib_DCSacClassComp_totals.json"%(RESULTDIR),"w") as f:
+                json.dump(DCsac_ClassComp_results,f,sort_keys=True,indent=4)
 
 
     #Run bifurcation analysis on Physics files

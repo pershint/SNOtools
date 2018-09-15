@@ -118,7 +118,7 @@ def PrepData_ClassSac(datafiles=[],MCfiles=[],var="nhits",precuts=None,nbins=10,
         for i in xrange(int(h_cut_FracFlagged.GetNbinsX())+1):
             if i==0:
                 continue
-                vardat =  vardat + ((float(h_cut_FracFlagged.GetBinWidth(i))/2.0) + float(h_cut_FracFlagged.GetBinLowEdge(i)),)
+            vardat =  vardat + ((float(h_cut_FracFlagged.GetBinWidth(i))/2.0) + float(h_cut_FracFlagged.GetBinLowEdge(i)),)
             fs = fs + (h_cut_FracFlagged.GetBinContent(i),)
             fs_unc = fs_unc + (h_cut_FracFlagged.GetBinError(i),)
         h_fracClean = ROOT.TH1D("h_fracClean", "h_fracClean", nbins, xmin, xmax)
@@ -140,6 +140,7 @@ def PrepData_ClassSac(datafiles=[],MCfiles=[],var="nhits",precuts=None,nbins=10,
         del h_flagged
     
     meta = {"binwidth":((xmax-xmin)/float(nbins)),"variable":var}
+    print("ALLCLASSSACS DATA: " + str(allclasssacs))
     #graphdict has the sacrifice information for each cut. Now, let's plot it.
     return allclasssacs,meta 
 
