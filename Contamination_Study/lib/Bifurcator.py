@@ -60,8 +60,8 @@ class Bifurcator(object):
                 self.cdict["bifurpath_DCmask"]))
         basecuts.append("((triggerWord&%s)==0)" % (self.cdict["path_trigmask"]))
         cut1list = []
-        cut1list.append("((dcFlagged&%s)!=%s)" % (self.cdict["cut1_DCmask"],\
-                self.cdict["cut1_DCmask"]))
+        cut1list.append("((dcFlagged&%s)!=%s)" % (self.cdict["cut1_bifurDCmask"],\
+                self.cdict["cut1_bifurDCmask"]))
         cut1list.append("((triggerWord&%s)!=0)" % (self.cdict["cut1_trigmask"]))
         cut2list = []
         cut2list.append("beta14>%s" % (self.cdict["cut2_b14_high"]))
@@ -176,7 +176,7 @@ class Bifurcator(object):
                 cut2_clean = True
                 if self.cdict["dcs_only"] is false and self.cdict["fits_only"] is false:
                     #We're using a dc branch and a fit branch
-                    if (((~datatree.dcFlagged) & self.cdict["cut1_DCmask"]) > 0):
+                    if (((~datatree.dcFlagged) & self.cdict["cut1_bifurDCmask"]) > 0):
                         cut1_clean = False
                     if ((datatree.trigWord & self.cdict["cut1_trigmask"]) > 0):
                         cut1_clean = False

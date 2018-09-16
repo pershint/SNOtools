@@ -163,7 +163,7 @@ class SacrificeAnalyzer(object):
 class DCSacrificeAnalyzer(SacrificeAnalyzer):
     def __init__(self, rootfiles_data=None, cuts_dict=None):
         super(DCSacrificeAnalyzer, self).__init__(rootfiles_data=rootfiles_data, rootfiles_mc=None,cuts_dict=cuts_dict)
-        self.cut1_mask = {'dcmask':self.cdict['cut1_DCmask'],'dcmask_cutnames': None}
+        self.cut1_mask = {'dcmask':self.cdict['cut1_sacDCmask'],'dcmask_cutnames': None}
         self.total_sacrifice = {} #Total sacrifice, statistical unc, and sys unc.
     
     def AnalyzeData(self,var="nhits",xmin=None,xmax=None):
@@ -190,7 +190,7 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
         
         print("######ANALYZING DATA CLEANING SACRIFICE#######")
         print("XMIN, XMAX: %s,%s"%(str(xmin),str(xmax))) 
-        dcmask = self.cdict['cut1_DCmask']
+        dcmask = self.cdict['cut1_sacDCmask']
         if dcmask == None:
             print("No DC mask in cuts config.  Please give a DC mask of cuts to plot")
             sys.exit(0)
@@ -260,7 +260,7 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
         print self.sac_percut
 
     def _GetTopSacs(self,topnumber=7):
-        dcmask = self.cdict['cut1_DCmask']
+        dcmask = self.cdict['cut1_sacDCmask']
         if len(self.sac_percut) <= topnumber:
             print("You already only have five cuts.  Not combining any")
             return
@@ -349,6 +349,7 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
     def GetFitTotalAndUncertainties(self):
         '''Finds the best fit total sacrifice and uncertainties (statistical and
         systematic is weighted stdev. from flat).'''
+        self.sac_percut = self._DeleteEmptyBins_all(self.sac_percut) 
         if self.sac_percut is None:
             print("You must analyze your data before you can do this fit!")
             return
