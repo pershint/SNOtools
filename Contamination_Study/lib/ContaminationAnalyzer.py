@@ -69,8 +69,8 @@ class ContaminationEstimator(object):
     #Equation 1 of bifur. analysis
 
 class LowEContamination(ContaminationEstimator):
-    '''Contamination estimate that requires an estimate on the
-    number of signal events in the a-box'''
+    '''Contamination estimate that approximates that the number of
+    signal events in the a-box is much larger than the contamination'''
     def __init__(self, Bifurcation_Summary=None, Sacrifice_Summary=None):
         super(LowEContamination,self).__init__(Bifurcation_Summary=Bifurcation_Summary,
                 Sacrifice_Summary=Sacrifice_Summary)

@@ -279,6 +279,9 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
                 'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'leaf',
                 'aqua blue','vomit', 'red','twilight']
         sns.set_palette(sns.xkcd_palette(xkcd_colors))#,len(self.sac_percut)))
+        fig = plt.figure()
+        fig.set_size_inches(18.5,11.5)
+        ax = fig.add_subplot(1,1,1)
         if self.cut1_mask['dcmask_cutnames'] is None:
             for cut in self.sac_percut:
                 plt.errorbar(x=self.sac_percut[cut].vardat, 
@@ -334,7 +337,7 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
             plt.title(title,fontsize=36)
         variable = self.sac_percut_metadata["variable"]
         plt.savefig(savedir+"/DCSac_%s.pdf"%(variable))
-        plt.show()
+        #plt.show()
         plt.close()
 
 class DataMCClassAnalyzer(SacrificeAnalyzer):
@@ -380,12 +383,14 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
 
     def SaveRatioToCSV(self,loc,name):
         '''Saves the ratio, ratio_unc, and bin centers for the current dataset to
-        a CSV file at the specified location'''
+        a CSV file at the specified location. Values are the right-hand edge of
+        the bins for the variable'''
         ratio = pandas.Series(self.sac_percut["ratio"]) 
         variable = pandas.Series(self.sac_percut["Data total"].vardat)
+        variable = variable + (self.sac_percut_metadata["binwidth"]/2.0)
         ratio_unc = pandas.Series(self.sac_percut["ratio_unc"])
         xlabel = self.sac_percut_metadata["variable"]
-        thegoods = {"ratio": ratio.round(4), "ratio_unc": ratio_unc.round(4), xlabel: variable.round(1)}
+        thegoods = {"ratio": ratio.round(4), "ratio_unc": ratio_unc.round(4), xlabel: variable.round(2)}
         thegoods_pd = pandas.DataFrame(thegoods)
         thegoods_pd.to_csv("%s/%s"%(loc,name))
 
@@ -564,7 +569,8 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
             plt.xlabel(xlabel,fontsize=34)
         plt.tick_params(labelsize=32)
         plt.title(title, fontsize=36)
-        plt.show()
+        #plt.show()
+        plt.close()
     
     def Plot_AccComparison(self,title="Heres a plot title",xlabel=None):
         if self.sac_percut is None:
@@ -603,7 +609,8 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
         plt.tick_params(labelsize=32)
         plt.title(title, fontsize=36)
         #plt.ion()
-        plt.show()
+        #plt.show()
+        plt.close()
     
     def PlotRatio(self,fittotal=True,title="Title for graph",xlabel="nhits",savedir="."):
         if self.sac_percut is None:
@@ -659,7 +666,7 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
         plt.title(title, fontsize=36)
         variable = self.sac_percut_metadata["variable"]
         plt.savefig(savedir+"/DataMCComp_%s.pdf"%(variable))
-        plt.show()
+        #plt.show()
         plt.close()
 
 class ClassSacrificeAnalyzer(SacrificeAnalyzer):
@@ -750,6 +757,7 @@ class ClassSacrificeAnalyzer(SacrificeAnalyzer):
                 'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
                 'aqua blue','vomit', 'black','twilight']
         sns.set_palette(sns.xkcd_palette(xkcd_colors))#,len(self.sac_percut)))
+        
         for cut in self.sac_percut:
             plt.errorbar(x=self.sac_percut[cut].vardat, 
                     y=self.sac_percut[cut].fractional_sacrifice,
@@ -788,6 +796,6 @@ class ClassSacrificeAnalyzer(SacrificeAnalyzer):
         #plt.savefig("sacrifice_b14itr_%s.pdf"%(self.sac_percut_metadata["variable"]))
         variable = self.sac_percut_metadata["variable"]
         plt.savefig(savedir+"/ClassSac_%s.pdf"%(variable))
-        plt.show()
+        #plt.show()
         plt.close()
 
