@@ -99,7 +99,7 @@ if __name__ == '__main__':
                     ClassComps = sa.DataMCClassAnalyzer(rootfiles_data=calib_data,
                             rootfiles_mc=calib_mc, cuts_dict=config_dict)
                     ClassComps.SetBinNumber(setup_dict["BINNUM_CUT2"])
-                    ClassComps.AnalyzeData(var=variable)
+                    ClassComps.AnalyzeData_FullAcc(var=variable)
                     SacComp_results['cut2_DataMCComp'][variable] = ClassComps.GetFitTotalAndUncertainties() 
                     if variable == "energy":
                         ClassComps.SaveRatioToCSV(RESULTDIR,"RatioVsEnergy.csv")
