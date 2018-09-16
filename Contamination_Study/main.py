@@ -42,6 +42,8 @@ CONFIGDIR = os.path.abspath(os.path.join(MAINDIR,"config"))
 RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "output","results_j"+str(JOBNUM)))
 if not os.path.exists(RESULTDIR):
     os.makedirs(RESULTDIR)
+if not os.path.exists(RESULTDIR+"/plots"):
+    os.makedirs(RESULTDIR+"/plots")
 DBDIR = os.path.abspath(os.path.join(MAINDIR, "DB"))
 
 if __name__ == '__main__':
@@ -74,32 +76,42 @@ if __name__ == '__main__':
         ru.save_sacrifice_list(RESULTDIR,calib_mc,"calibration_MCdata_used.json") 
         CUTS_TODO = setup_dict['CUTS_TODO']
         SACRIFICE_VARIABLES = setup_dict['SACRIFICE_VARIABLES']
-        DCsac_ClassComp_results = {} 
+        SacComp_results = {} 
         for cut in CUTS_TODO:
-            DCsac_ClassComp_results[cut] = {} 
+            SacComp_results[cut] = {} 
         for variable in SACRIFICE_VARIABLES:
-            for cut in DCsac_ClassComp_results:
+            for cut in SacComp_results:
                 if cut == 'cut1': 
                     DCSacs = sa.DCSacrificeAnalyzer(rootfiles_data=calib_data, cuts_dict=config_dict)
                     DCSacs.SetBinNumber(setup_dict["BINNUM_CUT1"])
                     DCSacs.AnalyzeData(var=variable)
-                    DCsac_ClassComp_results['cut1'][variable] = DCSacs.GetFitTotalAndUncertainties() 
+                    SacComp_results['cut1'][variable] = DCSacs.GetFitTotalAndUncertainties() 
                     if PLOTS is True:
-                        DCSacs.ShowPlottedSacrifice(title=setup_dict["PLOT_TITLE_CUT1"])
-                elif cut == 'cut2': 
-                    ClassSacs = sa.DataMCClassAnalyzer(rootfiles_data=calib_data,
-                            rootfiles_mc=calib_mc, cuts_dict=config_dict)
+                        DCSacs.ShowPlottedSacrifice(title=setup_dict["PLOT_TITLE_CUT1"],
+                                savedir="%s/%s"%(RESULTDIR,"plots"))
+                elif cut == 'cut2':
+                    ClassSacs = sa.ClassSacrificeAnalyzer(rootfiles_data=calib_data,
+                             cuts_dict=config_dict)
                     ClassSacs.SetBinNumber(setup_dict["BINNUM_CUT2"])
                     ClassSacs.AnalyzeData(var=variable)
-                    DCsac_ClassComp_results['cut2'][variable] = ClassSacs.GetFitTotalAndUncertainties() 
+                    SacComp_results['cut2'][variable] = ClassSacs.GetFitTotalAndUncertainties()
+                elif cut == 'cut2_DataMCComp':
+                    ClassComps = sa.DataMCClassAnalyzer(rootfiles_data=calib_data,
+                            rootfiles_mc=calib_mc, cuts_dict=config_dict)
+                    ClassComps.SetBinNumber(setup_dict["BINNUM_CUT2"])
+                    ClassComps.AnalyzeData(var=variable)
+                    SacComp_results['cut2_DataMCComp'][variable] = ClassComps.GetFitTotalAndUncertainties() 
+                    if variable == "energy":
+                        ClassComps.SaveRatioToCSV(RESULTDIR,"RatioVsEnergy.csv")
                     if PLOTS is True: 
-                        ClassSacs.PlotRatio(title=setup_dict["PLOT_TITLE_CUT2"])
+                        ClassComps.PlotRatio(title=setup_dict["PLOT_TITLE_CUT2"],
+                                savedir="%s/%s"%(RESULTDIR,"plots"))
                 else:
                     print("Cut type not supported.  Please use only cut1 and/or cut2"+\
                             " in your setup file.")
         if NOSAVE is False:
             with open("%s/calib_DCSacClassComp_totals.json"%(RESULTDIR),"w") as f:
-                json.dump(DCsac_ClassComp_results,f,sort_keys=True,indent=4)
+                json.dump(SacComp_results,f,sort_keys=True,indent=4)
 
 
     #Run bifurcation analysis on Physics files

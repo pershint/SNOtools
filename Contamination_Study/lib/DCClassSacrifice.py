@@ -134,12 +134,6 @@ class SacrificeAnalyzer(object):
             #index(\
             #        index=range(0,len(self.sac_percut[cut])-1))
 
-class DCSacrificeAnalyzer(SacrificeAnalyzer):
-    def __init__(self, rootfiles_data=None, cuts_dict=None):
-        super(DCSacrificeAnalyzer, self).__init__(rootfiles_data=rootfiles_data, rootfiles_mc=None,cuts_dict=cuts_dict)
-        self.cut1_mask = {'dcmask':self.cdict['cut1_DCmask'],'dcmask_cutnames': None}
-        self.total_sacrifice = {} #Total sacrifice, statistical unc, and sys unc.
-    
     def GetFitTotalAndUncertainties(self):
         '''Finds the best fit total sacrifice and uncertainties (statistical and
         systematic is weighted stdev. from flat).'''
@@ -165,6 +159,13 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
         print(self.total_sacrifice) 
         return self.total_sacrifice
    
+
+class DCSacrificeAnalyzer(SacrificeAnalyzer):
+    def __init__(self, rootfiles_data=None, cuts_dict=None):
+        super(DCSacrificeAnalyzer, self).__init__(rootfiles_data=rootfiles_data, rootfiles_mc=None,cuts_dict=cuts_dict)
+        self.cut1_mask = {'dcmask':self.cdict['cut1_DCmask'],'dcmask_cutnames': None}
+        self.total_sacrifice = {} #Total sacrifice, statistical unc, and sys unc.
+    
     def AnalyzeData(self,var="nhits",xmin=None,xmax=None):
         '''
         Takes in a rootfile and returns a PandaFrame object that can be used
@@ -184,7 +185,6 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
                 sys.exit(0)
         varname = var
         if var=='posr3':
-            var = "(sqrt(posx**2 + posy**2 + (posz-108.0)**2)/6000.0)**3"
             xmin = (float(xmin)/6000.0)**3
             xmax = (float(xmax)/6000.0)**3
         
@@ -273,7 +273,7 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
         topnames = sortednames[(len(sortednames)-(topnumber+1)):len(sortednames)]
         self.cut1_mask['dcmask_cutnames'] = topnames
 
-    def ShowPlottedSacrifice(self,fittotal=True,title=None):
+    def ShowPlottedSacrifice(self,fittotal=True,title=None,savedir="."):
         sns.set_style("whitegrid")
         xkcd_colors = ['black','slate blue', 'fluro green', 'brown', 'blue',
                 'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'leaf',
@@ -332,7 +332,8 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
             plt.title("Fractional sacrifice due to data cleaning cuts",fontsize=36)
         else: 
             plt.title(title,fontsize=36)
-        #plt.savefig("sacrifice_b14itr_%s.pdf"%(self.sac_percut_metadata["variable"]))
+        variable = self.sac_percut_metadata["variable"]
+        plt.savefig(savedir+"/DCSac_%s.pdf"%(variable))
         plt.show()
         plt.close()
 
@@ -376,6 +377,17 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
         self.datamc_ratio['sys_unc'] = float(systematic_unc)
         print(self.datamc_ratio) 
         return self.datamc_ratio
+
+    def SaveRatioToCSV(self,loc,name):
+        '''Saves the ratio, ratio_unc, and bin centers for the current dataset to
+        a CSV file at the specified location'''
+        ratio = pandas.Series(self.sac_percut["ratio"]) 
+        variable = pandas.Series(self.sac_percut["Data total"].vardat)
+        ratio_unc = pandas.Series(self.sac_percut["ratio_unc"])
+        xlabel = self.sac_percut_metadata["variable"]
+        thegoods = {"ratio": ratio.round(4), "ratio_unc": ratio_unc.round(4), xlabel: variable.round(1)}
+        thegoods_pd = pandas.DataFrame(thegoods)
+        thegoods_pd.to_csv("%s/%s"%(loc,name))
 
     def _DeleteEmptyBins(self,data):
         '''Deletes any bins with zero events and zero uncertainty (i.e. bins
@@ -476,10 +488,14 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
             h_cut_FracFlagged.Sumw2()
             if label == "Data total":
                 data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,self.nbins,xmin,xmax),
-                        "%s&&(beta14<-0.12 || beta14>0.95 || itr<0.55)"%(self.precuts_data) ,"goff")
+                        "%s&&(beta14<%f || beta14>%f || itr<%f)"%(self.precuts_data,
+                            self.cdict["cut2_b14_low"], self.cdict["cut2_b14_high"],
+                            self.cdict["cut2_itr_low"]) ,"goff")
             if label == "MC total":
                 MC.Draw("%s>>h_flagged(%i,%f,%f)" % (var,self.nbins,xmin,xmax),
-                        "%s&&(beta14<-0.12 || beta14>0.95 || itr<0.55)"%(self.precuts_mc) ,"goff")
+                        "%s&&(beta14<%f || beta14>%f || itr<%f)"%(self.precuts_mc,
+                            self.cdict["cut2_b14_low"], self.cdict["cut2_b14_high"],
+                            self.cdict["cut2_itr_low"]) ,"goff")
             print("LABEL: " + str(label))
             h_flagged = gDirectory.Get("h_flagged")
             h_flagged.Sumw2()
@@ -527,6 +543,7 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
                 'aqua blue','vomit', 'black','twilight']
         sns.set_palette(sns.xkcd_palette(xkcd_colors))#,len(self.sac_percut)))
         fig = plt.figure()
+        fig.set_size_inches(18.5,11.5)
         ax = fig.add_subplot(1,1,1)
         for cut in self.sac_percut:
             plt.errorbar(x=self.sac_percut[cut].vardat, 
@@ -547,7 +564,6 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
             plt.xlabel(xlabel,fontsize=34)
         plt.tick_params(labelsize=32)
         plt.title(title, fontsize=36)
-        #plt.ion()
         plt.show()
     
     def Plot_AccComparison(self,title="Heres a plot title",xlabel=None):
@@ -589,7 +605,7 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
         #plt.ion()
         plt.show()
     
-    def PlotRatio(self,fittotal=True,title="Title for graph",xlabel="nhits"):
+    def PlotRatio(self,fittotal=True,title="Title for graph",xlabel="nhits",savedir="."):
         if self.sac_percut is None:
             print("You must first analyze the input root data!")
             return
@@ -599,6 +615,7 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
                 'aqua blue','vomit', 'black','twilight']
         sns.set_palette(sns.xkcd_palette(xkcd_colors))#,len(self.sac_percut)))
         fig = plt.figure()
+        fig.set_size_inches(18.5,11.5)
         ax = fig.add_subplot(1,1,1)
         self.sac_percut = self._DeleteEmptyBins_all(self.sac_percut) 
         ratio = pandas.Series(self.sac_percut["Data total"].fractional_acceptance /
@@ -640,4 +657,137 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
                     plt.xlabel(self.sac_percut_metadata["variable"],fontsize=32)
         plt.tick_params(labelsize=32)
         plt.title(title, fontsize=36)
+        variable = self.sac_percut_metadata["variable"]
+        plt.savefig(savedir+"/DataMCComp_%s.pdf"%(variable))
         plt.show()
+        plt.close()
+
+class ClassSacrificeAnalyzer(SacrificeAnalyzer):
+    def __init__(self, rootfiles_data=None, cuts_dict=None):
+        super(ClassSacrificeAnalyzer, self).__init__(rootfiles_data=rootfiles_data, cuts_dict=cuts_dict)
+        self.total_sacrifice = {} #Total sacrifice, statistical unc, and sys unc.
+
+    def AnalyzeData(self,var="nhits",xmin=None,xmax=None):
+        '''
+        Takes in a rootfile and returns a PandaFrame object that can be used
+        for plotting in matplotlib.  Returns var vs. fractional sacrifice for
+        events w/ b14<b14_low, b14>b14_high, and itr < itr_low.
+        '''
+         
+        havebounds = False 
+        for v in self.analyze_range:
+            if xmin is None or xmax is None and v == var: 
+                xmin,xmax = self.analyze_range[var][0],self.analyze_range[var][1]
+                havebounds = True
+        if not havebounds:
+            if xmin is None or xmax is None:
+                print("You do not have bounds defined for analyzing this variable"+\
+                        "defined.  Check your config file.")
+                sys.exit(0)
+        varname = var 
+        if var=='posr3':
+            xmin = (float(xmin)/6000.0)**3
+            xmax = (float(xmax)/6000.0)**3
+        print("######ESTIMATING CLASSIFIER SACRIFICE#######") 
+        data = ROOT.TChain("output")
+        for rf in self.rootfiles_data:
+            data.Add(rf)
+        #Now, make a new dictionary object: key is cutname, value is histogram
+        print("PRECUTS IN CLASSIFIER SAC ESTIMATOR: " + str(self.precuts_data))
+        if self.precuts_data is not None:
+            data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,self.nbins,xmin,xmax),
+                    "%s" % (self.precuts_data),"goff")
+        else:
+            data.Draw("%s>>h_allevents(%i,%f,%f)"% (var,self.nbins,xmin,xmax),
+                    "","goff")
+        h_allevents = gDirectory.Get("h_allevents")
+        h_allevents.Sumw2()
+        cutnames = ()
+        labeldict = ["b14_low", "b14_high","itr_low","total"]
+        for cut in labeldict:
+            graphdict={}
+            vardat, fs,fs_unc =(), (), () #pandas wants ntuples
+            h_cut_FracFlagged = ROOT.TH1D("h_cut_FracFlagged", "h_cut_FracFlagged", self.nbins,xmin,xmax)
+            h_cut_FracFlagged.Sumw2()
+            if cut == "b14_low":
+                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,self.nbins,xmin,xmax),
+                        "%s&&beta14<%s"%(self.precuts_data,str(self.cdict['cut2_b14_low'])),"goff")
+            if cut == "b14_high":
+                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,self.nbins,xmin,xmax),
+                        "%s&&beta14>%s"%(self.precuts_data,str(self.cdict['cut2_b14_high'])) ,"goff")
+            if cut == "itr_low":
+                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,self.nbins,xmin,xmax),
+                        "%s&&itr<%s"%(self.precuts_data,str(self.cdict['cut2_itr_low'])),"goff")
+            if cut == "total":
+                data.Draw("%s>>h_flagged(%i,%f,%f)" % (var,self.nbins,xmin,xmax),
+                        "%s&&(beta14<%f || beta14>%f || itr<%f)"%(self.precuts_data,
+                            self.cdict['cut2_b14_low'],self.cdict['cut2_b14_high'],
+                            self.cdict['cut2_itr_low']) ,"goff")
+            print("CUT: " + str(cut))
+            h_flagged = gDirectory.Get("h_flagged")
+            h_flagged.Sumw2()
+            h_cut_FracFlagged.Divide(h_flagged,h_allevents,1.,1.,"b")
+            for i in xrange(int(h_cut_FracFlagged.GetNbinsX())+1):
+                if i==0:
+                    continue
+                vardat =  vardat + ((float(h_cut_FracFlagged.GetBinWidth(i))/2.0) + float(h_cut_FracFlagged.GetBinLowEdge(i)),)
+                fs = fs + (h_cut_FracFlagged.GetBinContent(i),)
+                fs_unc = fs_unc + (h_cut_FracFlagged.GetBinError(i),)
+            graphdict["vardat"] = vardat
+            graphdict["fractional_sacrifice"] = fs
+            graphdict["fs_uncertainty"] = fs_unc
+            self.sac_percut[cut]= pandas.DataFrame(data=graphdict)
+            del h_cut_FracFlagged
+            del h_flagged
+        print(self.sac_percut) 
+        self._DeleteEmptyBins()
+        self.sac_percut_metadata = {"binwidth":((xmax-xmin)/float(self.nbins)),"variable":varname}
+        #graphdict has the sacrifice information for each cut. Now, let's plot it.
+
+    def ShowPlottedSacrifice(self,fittotal=True,title=None,savedir="."):
+        sns.set_style("whitegrid")
+        xkcd_colors = ['slate blue', 'black', 'brown', 'blue',
+                'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
+                'aqua blue','vomit', 'black','twilight']
+        sns.set_palette(sns.xkcd_palette(xkcd_colors))#,len(self.sac_percut)))
+        for cut in self.sac_percut:
+            plt.errorbar(x=self.sac_percut[cut].vardat, 
+                    y=self.sac_percut[cut].fractional_sacrifice,
+                    yerr=self.sac_percut[cut].fs_uncertainty,
+                    linestyle='none', marker='o', label=cut, markersize=6,
+                    elinewidth=3, capsize=0)
+        if fittotal is True:
+            print(self.sac_percut)
+            popt, pcov = spc.curve_fit(self._flatline, self.sac_percut["total"].vardat, self.sac_percut["total"].fractional_sacrifice,
+                    p0=[0.02], sigma=self.sac_percut["total"].fs_uncertainty)
+            #one standard deviation
+            print("THE PCOV: %s"%(str(pcov))) 
+            try:
+                stdev = np.sqrt(np.diag(pcov))
+            except ValueError:
+                print("Fit likely failed.  You may not have enough data"+\
+                        "in this region to fit a straight line.")
+                raise
+            plt.axhline(popt, linewidth=3, alpha=0.8, color='k',label= r'fit: $\mu = %f,unc = %f$' % (float(popt[0]), float(stdev[0])))
+        plt.legend(loc=3)
+        plt.yscale("log")
+        plt.ylabel("Fractional sacrifice",fontsize=34)
+        varindict = False
+        for var in self.xlabel_dict:
+            if self.sac_percut_metadata["variable"] == var:
+                plt.xlabel(self.xlabel_dict[var],fontsize=32)
+                varindict = True
+            else:
+                if varindict is False: 
+                    plt.xlabel(self.sac_percut_metadata["variable"],fontsize=32)
+        plt.tick_params(labelsize=32)
+        if title is None:
+            plt.title("Fractional sacrifice due to classifiers",fontsize=36)
+        else: 
+            plt.title(title,fontsize=36)
+        #plt.savefig("sacrifice_b14itr_%s.pdf"%(self.sac_percut_metadata["variable"]))
+        variable = self.sac_percut_metadata["variable"]
+        plt.savefig(savedir+"/ClassSac_%s.pdf"%(variable))
+        plt.show()
+        plt.close()
+

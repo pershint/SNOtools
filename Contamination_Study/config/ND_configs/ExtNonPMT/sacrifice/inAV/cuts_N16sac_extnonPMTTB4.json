@@ -1,5 +1,5 @@
 {
-    "comments": "Data cleaning cut sacrifice mask, ExtNonPMT ROI TB4", 
+    "comments": "Data cleaning cut sacrifice mask, ExtNonPMT ROI TB4 (in AV) ", 
     "E_high": 5.95, 
     "E_low": 3.0, 
     "nhits_low": 0,
@@ -10,7 +10,7 @@
     "isCal": true,
     "AVudotrCut": false, 
     "bifurpath_DCmask": 0, 
-    "cut1_DCmask": 81534, 
+    "cut1_DCmask": 81790, 
     "cut1_trigmask": 0, 
     "cut2_b14_high": 0.95, 
     "cut2_b14_low": -0.12, 
