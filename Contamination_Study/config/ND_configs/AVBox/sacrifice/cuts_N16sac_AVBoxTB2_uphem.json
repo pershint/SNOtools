@@ -11,7 +11,7 @@
     "AVudotrCut": true,
     "AVudotrCut_rcut": 4750,
     "bifurpath_DCmask": 0, 
-    "cut1_DCmask": 81534, 
+    "cut1_sacDCmask": 81534, 
     "cut1_trigmask": 0, 
     "cut2_b14_high": 0.95, 
     "cut2_b14_low": -0.12, 
