@@ -7,14 +7,14 @@ basepath = os.path.dirname(__file__)
 #some of the configuration values with flags (changes dictionary values), and
 parser = argparse.ArgumentParser(description='Sacrifice and contamination analysis code '+\
         'for SNO+ ntuple data.  Results of all analyses are loaded from/saved to '+\
-        './output/results_j{JOBNUM}, where JOBNUM is specified with --jobnum flag. ')
+        './output/results_j{JOBNAME}, where JOBNAME is specified with --jobname flag. ')
 parser.add_argument('--nosave', dest='NOSAVE',action='store_true',
         help='Do not save any outputs; ensures no writing is done')
 parser.add_argument('--debug', dest='debug',action='store_true',
         help='Run code in debug mode')
 parser.add_argument('--plots', dest='PLOTS',action='store_true',
         help='Show sacrifice distribution and fit plots')
-parser.add_argument('--jobnum', dest='JOBNUM', action='store',
+parser.add_argument('--jobname', dest='JOBNAME', action='store',
         help='Specify this jobs number among others.  Will save results'+\
                 'to ./output/results_jN')
 parser.add_argument('--configfile', dest='CONFIGFILE',action='store',
@@ -57,6 +57,6 @@ cal_default = os.path.abspath(os.path.join(THISDIR,"..", "ntuples","calibration"
 calmc_default = os.path.abspath(os.path.join(THISDIR,"..", "ntuples", "calibration", "mc"))
 parser.set_defaults(NOSAVE=False,debug=False,CALIBSACANALYSIS=False,
         MCSACANALYSIS=False,BIFURCATE=False,ESTIMATECONTAMINATION=False,
-        JOBNUM=0,erange=None,ANALYSISDIR=pd_default,CONFIGFILE='cuts_default.json', 
+        JOBNAME="0",erange=None,ANALYSISDIR=pd_default,CONFIGFILE='cuts_default.json', 
         LOWECONTAM=False,CALIBDIR=cal_default,CALIBMCDIR=calmc_default,ZRANGE=None,PLOTS=False)
 args = parser.parse_args()

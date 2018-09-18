@@ -17,6 +17,10 @@ class LaTeXTable(object):
     def ClearTable(self):
         self.tlines = []
 
+    def LoadTable(self,table):
+        '''Takes in a filename and loads the file into the table lines'''
+        self.tlines = table
+
     def AddTableLine(self,line):
         self.tlines.append(line)
 
@@ -33,6 +37,40 @@ class SacClassTable(LaTeXTable):
     def __init__(self,datadicts=None):
         super(SacClassTable,self).__init__()
         self.datadicts = datadicts
+    
+    def EditSysValues(self):
+        '''Takes values found in the datadicts object and
+        updates the systematic uncertianties for lines by using
+        self.datadict's keys identified with first object in line'''
+        for j,line in enumerate(self.tlines):
+            for key in self.datadicts:
+                if line.find(key) != -1:
+                    #Found our string. Break line into entries
+                    sline = line.split(" & ")
+                    #Dc/class values are 3rd and 4th index elements
+                    thislinesdata=self.datadicts[key]
+                    Classinfo = thedata['cut2_DataMCComp']
+                    classcomps = []
+                    comp_stat_uncs = []
+                    comp_sys_uncs = []
+                    for var in Classinfo:
+                        classcomps.append(Classinfo[var]['Data/MC ratio'])
+                        comp_stat_uncs.append(Classinfo[var]['stat_unc'])
+                        comp_sys_uncs.append(Classinfo[var]['sys_unc'])
+                    classcomps = np.array(classcomps)
+                    comp_stat_uncs = np.array(comp_stat_uncs)
+                    comp_sys_uncs = np.array(comp_sys_uncs)
+                    avg_comp = np.round(np.average(classcomps),4)
+                    stat_unc = np.sqrt(np.sum(sac_stat_uncs**2))
+                    sys_unc = np.sqrt(np.sum(sac_sys_uncs**2))
+                    tot_unc = np.round(np.sqrt(stat_unc**2 + sys_unc**2),4)
+                    sline[3] = avg_comp
+                    sline[4] = tot_unc
+                    #Then, rejoin
+                    newtline = " & ".join(sline)
+                    print(newtline)
+                    #when it works...
+                    #self.tline[j] = newtline
 
     def MakeTitle(self,sepstatsys=False):
         '''Add the title line that I want for the tables given to'''
@@ -154,14 +192,21 @@ def getAllDirJsons(jsonname):
     return alldirjsons
 
 if __name__=='__main__':
+    EDITSYS = True
+    SYSFILETOEDIT = "testing.tex"
     print("HERE'S OUR MAIN CODE")
     alldirjsons = getAllDirJsons("calib_DCSacClassComp_totals.json")
     print(alldirjsons)
-    #Now, we have all the Time bins.  Let's start making the lines 
-    #That will be each column in the table
-    TheTable = SacClassTable(datadicts=alldirjsons)
-    TheTable.AddCommentLine("DC/Class corrections for AV Box Timebins")
-    TheTable.MakeTitle(sepstatsys=True)
-    for key in alldirjsons:
-        TheTable.WriteTableLine(key,sepstatsys=True)
-    TheTable.SaveTable("testing.tex")
+    if EDITSYS:
+        #use alldirjsons, but load in the table we want to modify
+        ETable = SacClassTable(datadicts=alldirjsons)
+        ETable.LoadLines(SYSFILETOEDIT)
+        ETable.EditSysValues()
+    else:
+        #That will be each column in the table
+        TheTable = SacClassTable(datadicts=alldirjsons)
+        TheTable.AddCommentLine("DC/Class corrections for AV Box Timebins")
+        TheTable.MakeTitle(sepstatsys=True)
+        for key in alldirjsons:
+            TheTable.WriteTableLine(key,sepstatsys=True)
+    TheTable.SaveTable(SYSFILETOEDIT)

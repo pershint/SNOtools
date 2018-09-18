@@ -17,7 +17,7 @@ ESTIMATECONTAMINATION=args.ESTIMATECONTAMINATION
 PLOTS=args.PLOTS
 ERANGE=args.ERANGE
 ZRANGE=args.ZRANGE
-JOBNUM=args.JOBNUM
+JOBNAME=args.JOBNAME
 CALIBDIR=args.CALIBDIR
 CALIBMCDIR=args.CALIBMCDIR
 ANALYSISDIR=args.ANALYSISDIR
@@ -39,7 +39,7 @@ basepath = os.path.dirname(__file__)
 MAINDIR = os.path.dirname(__file__)
 CONFIGDIR = os.path.abspath(os.path.join(MAINDIR,"config"))
 
-RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "output","results_j"+str(JOBNUM)))
+RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "output","results_j"+str(JOBNAME)))
 if not os.path.exists(RESULTDIR):
     os.makedirs(RESULTDIR)
 if not os.path.exists(RESULTDIR+"/plots"):
