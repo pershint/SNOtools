@@ -9,7 +9,7 @@
     "fitValid": true,
     "isCal": true,
     "AVudotrCut": true,
-    "AVudotrCut_rcut": 5450,
+    "AVudotrCut_rcut": 5300,
     "bifurpath_DCmask": 0, 
     "cut1_sacDCmask": 81534, 
     "cut1_trigmask": 0, 

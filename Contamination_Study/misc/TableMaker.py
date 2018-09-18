@@ -34,14 +34,19 @@ class SacClassTable(LaTeXTable):
         super(SacClassTable,self).__init__()
         self.datadicts = datadicts
 
-    def MakeTitle(self):
+    def MakeTitle(self,sepstatsys=False):
         '''Add the title line that I want for the tables given to'''
         '''the SNO+ collaborators'''
-        thetitle="TimeBin & DC Sacrifice & DC Sac. Unc. & "+\
-                "Data/MC Class Comp. & Data/MC Class Comp. unc \\\\ \n"
+        if sepstatsys:
+            thetitle="TimeBin & DC Sacrifice & DC Sac. Unc. & "+\
+                    "Data/MC Class Comp. & Data/MC Class Comp. unc \\\\ \n"
+        else:
+            thetitle="TimeBin & DC Sacrifice & DC Sac stat Unc. & "+\
+                    "DC Sac sys unc & Data/MC Class Comp. & Data/MC stat unc & "+\
+                    "Data/MC sys unc\\\\ \n"
         self.tlines.append(thetitle)
 
-    def WriteTableLine(self,key):
+    def WriteTableLine(self,key,sepstatsys=False):
         '''For a given key, searches the datadict and writes the
         data line with the average DC/Classifier info and the 
         uncertainties added in quadrature'''
@@ -65,10 +70,14 @@ class SacClassTable(LaTeXTable):
         sac_stat_uncs = np.array(sac_stat_uncs)
         sac_sys_uncs = np.array(sac_sys_uncs)
         avg_sac = np.round(np.average(sacrifices),4)
-        stat_unc = np.sum(sac_stat_uncs**2)
-        sys_unc = np.sum(sac_sys_uncs**2)
-        tot_unc = np.round(np.sqrt(stat_unc + sys_unc),4)
-        theline += "%s & %s & "%(str(avg_sac),str(tot_unc))
+        stat_unc = np.sqrt(np.sum(sac_stat_uncs**2))
+        sys_unc = np.sqrt(np.sum(sac_sys_uncs**2))
+        tot_unc = np.round(np.sqrt(stat_unc**2 + sys_unc**2),4)
+        if sepstatsys:
+            theline += "%s & %s & %s & "%(str(avg_sac),str(stat_unc),
+                    str(sys_unc))
+        else:
+            theline += "%s & %s & "%(str(avg_sac),str(tot_unc))
         Classinfo = thedata['cut2_DataMCComp']
         classcomps = []
         comp_stat_uncs = []
@@ -81,10 +90,14 @@ class SacClassTable(LaTeXTable):
         comp_stat_uncs = np.array(comp_stat_uncs)
         comp_sys_uncs = np.array(comp_sys_uncs)
         avg_comp = np.round(np.average(classcomps),4)
-        stat_unc = np.sum(comp_stat_uncs**2)
-        sys_unc = np.sum(comp_sys_uncs**2)
-        tot_unc = np.round(np.sqrt(stat_unc + sys_unc),4)
-        theline += "%s & %s \\\\\n"%(str(avg_comp),str(tot_unc))
+        stat_unc = np.sqrt(np.sum(sac_stat_uncs**2))
+        sys_unc = np.sqrt(np.sum(sac_sys_uncs**2))
+        tot_unc = np.round(np.sqrt(stat_unc**2 + sys_unc**2),4)
+        if sepstatsys:
+            theline += "%s & %s & %s & "%(str(avg_comp),str(stat_unc),
+                    str(sys_unc))
+        else:
+            theline += "%s & %s & "%(str(avg_comp),str(tot_unc))
         self.tlines.append(theline)
 
 def getTBRowLabel(tbstr):
@@ -148,7 +161,7 @@ if __name__=='__main__':
     #That will be each column in the table
     TheTable = SacClassTable(datadicts=alldirjsons)
     TheTable.AddCommentLine("DC/Class corrections for AV Box Timebins")
-    TheTable.MakeTitle()
+    TheTable.MakeTitle(sepstatsys=True)
     for key in alldirjsons:
-        TheTable.WriteTableLine(key)
+        TheTable.WriteTableLine(key,sepstatsys=True)
     TheTable.SaveTable("testing.tex")
