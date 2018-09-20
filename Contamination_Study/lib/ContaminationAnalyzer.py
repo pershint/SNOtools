@@ -102,7 +102,7 @@ class LowEContamination(ContaminationEstimator):
         return (self.d - ((1.0-self.x2)*(1.0-self.x1)*self.signal_estimate))
     
     def _D_unc(self):
-        t3_unc = (self.d - ((1.0-self.x2)*(1.0-self.x1)*self.signal_estimate))*np.sqrt(\
+        t3_unc = (((1.0-self.x2)*(1.0-self.x1)*self.signal_estimate))*np.sqrt(\
                 (self.x1_unc/(1-self.x1))**2 + (self.x2_unc/(1-self.x2))**2 + \
                 (self.signal_estimate_unc/self.signal_estimate)**2)
         Du = np.sqrt((np.sqrt(self.d))**2 + (t3_unc)**2)
@@ -230,6 +230,7 @@ class NDContamination(ContaminationEstimator):
         #estimated zero contamination. Delete the elements and add zeros to
         #y1y2 later.
         divzeros = np.where(bkgevts==0)[0]
+        print("DIVZEROS: " + str(divzeros))
         numdivzeros = len(divzeros)
         ashot = np.delete(ashot,divzeros)
         bshot = np.delete(bshot,divzeros)
@@ -240,14 +241,19 @@ class NDContamination(ContaminationEstimator):
         x1_shot = pd.RandShoot(self.x1, self.x1_unc, n_nonz)
         x2_shot = pd.RandShoot(self.x2, self.x2_unc, n_nonz)
         _avg_y1y2s = self._avg_y1y2(ashot, bshot, cshot, x1_shot, x2_shot, bkgevts)
+        _avg_y1y2Bs = _avg_y1y2s*bkgevts
         #Add estimated background of zero for events with no background back
         zero_results = np.zeros(numdivzeros)
+        _avg_y1y2Bs = np.append(_avg_y1y2Bs, zero_results)
         _avg_y1y2s = np.append(_avg_y1y2s, zero_results)
-        np.sort(_avg_y1y2s)
+        _avg_y1y2Bs = np.sort(_avg_y1y2Bs)
+        _avg_y1y2s = np.sort(_avg_y1y2s)
+        y1y2B_CL = _avg_y1y2Bs[int(float(CL)*float(len(_avg_y1y2Bs)))]
         y1y2_CL = _avg_y1y2s[int(float(CL)*float(len(_avg_y1y2s)))]
         self.contamination_summary["CL"] = CL
         self.contamination_summary["y1y2_to_CL"] = y1y2_CL
-        return _avg_y1y2s
+        self.contamination_summary["y1y2B_to_CL"] = y1y2B_CL
+        return _avg_y1y2Bs
 
     def CalculateContaminationValues(self):
         self.contamination_summary["y1"] = self._y_1(self.a, self.b,\
@@ -256,6 +262,8 @@ class NDContamination(ContaminationEstimator):
                 self.x2,self.bkg_events)
         self.contamination_summary["y1*y2"] = self._y1y2(self.a,self.x1,\
                 self.x2,self.bkg_events)
+        self.contamination_summary["y1*y2"] = self._y1y2(self.a,self.x1,\
+                self.x2,self.bkg_events)*self.bkg_events
         self.contamination_summary["highest_y1y2"] = self._highest_y1y2(self.a,\
                 self.b,self.c,self.x1,self.x2,self.bkg_events)
         self.contamination_summary["leastsq_y1y2"] = self._leastsq_y1y2(self.a,\

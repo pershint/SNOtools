@@ -20,9 +20,9 @@ parser.add_argument('--jobname', dest='JOBNAME', action='store',
 parser.add_argument('--configfile', dest='CONFIGFILE',action='store',
         type=str,help='Specify the JSON file in ./config/ that has all cut and ROI"+\
                 "selection desired for analysis.  Default is "cuts_default.json"')
-parser.add_argument('--lowE', dest='LOWECONTAM',action='store_true',
-        help='Tell contamination study whether or not to use analysis for'+\
-                'low energy contamination.  For ND, lowE best for E < 5.5 MeV')
+parser.add_argument('--LETA', dest='LETACONTAM',action='store_true',
+        help='Tell contamination study whether or not to use analysis used '+\
+                'in the SNO LETA approach.')
 parser.add_argument('--analysisdir', dest='ANALYSISDIR',action='store',
         type=str,help='Specify the directory where the analysis files'+\
                 'are stored.  Will read all files ending with .ntuple.root'+\
@@ -58,5 +58,5 @@ calmc_default = os.path.abspath(os.path.join(THISDIR,"..", "ntuples", "calibrati
 parser.set_defaults(NOSAVE=False,debug=False,CALIBSACANALYSIS=False,
         MCSACANALYSIS=False,BIFURCATE=False,ESTIMATECONTAMINATION=False,
         JOBNAME="0",erange=None,ANALYSISDIR=pd_default,CONFIGFILE='cuts_default.json', 
-        LOWECONTAM=False,CALIBDIR=cal_default,CALIBMCDIR=calmc_default,ZRANGE=None,PLOTS=False)
+        LETACONTAM=False,CALIBDIR=cal_default,CALIBMCDIR=calmc_default,ZRANGE=None,PLOTS=False)
 args = parser.parse_args()
