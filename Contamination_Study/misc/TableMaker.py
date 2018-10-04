@@ -245,7 +245,7 @@ def getAllDirJsons(jsonname):
     return alldirjsons
 
 if __name__=='__main__':
-    CONTAM=True 
+    CONTAM=False
     EDITSYS = False
     SEPSTATSYS = True
     SYSFILETOEDIT = "TheTest.tex"

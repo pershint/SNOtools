@@ -2,7 +2,7 @@
 
 #This bash script feeds in an array of energy ranges and starts Contamination Study jobs for each one.
 
-TB=3
+TB=6
 
 ROITYPE=NDROI/contamination
 FILEEXTENS=ND
@@ -15,11 +15,11 @@ cd $RUNDIR
 
 if ((${TB}==2));
   then
-    python main.py --jobname ${TB}lo --analysisdir ${ANALYSISDIR} --contamination --lowE --debug
-    python main.py --jobname ${TB}up --analysisdir ${ANALYSISDIR} --contamination --lowE --debug
+    python main.py --jobname ${TB}lo --analysisdir ${ANALYSISDIR} --contamination  --debug
+    python main.py --jobname ${TB}up --analysisdir ${ANALYSISDIR} --contamination  --debug
   fi
 if ((${TB} !=2 ));
   then
-    python main.py --jobname ${TB} --analysisdir ${ANALYSISDIR} --contamination --debug --plots --LETA
-  fi
+    python main.py --jobname ${TB} --analysisdir ${ANALYSISDIR} --contamination --debug --plots
+fi
 done;
