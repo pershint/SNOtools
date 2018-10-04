@@ -2,13 +2,13 @@
 
 #This bash script feeds in an array of energy ranges and starts Contamination Study jobs for each one.
 
-TB=6
+TB=3
 
 ROITYPE=NDROI/contamination
 FILEEXTENS=ND
 RUNDIR=/home/onetrueteal/Programs/SNOrat/rat/tools/SNOtools/Contamination_Study
-CALIBDIR=/home/onetrueteal/share/SNOPlus/N16/Data/Nov2017_N16/subtuple
-CALIBMCDIR=/home/onetrueteal/share_wd/ND_AnalysisData/BenN16MC/Nov2017_IntScan/subtuple
+#CALIBDIR=/home/onetrueteal/share/SNOPlus/N16/Data/Nov2017_N16/subtuple
+#CALIBMCDIR=/home/onetrueteal/share_wd/ND_AnalysisData/BenN16MC/Nov2017_IntScan/subtuple
 ANALYSISDIR=/home/onetrueteal/share_wd/ND_AnalysisData/TB${TB}/subtuple/
 cd $RUNDIR
 

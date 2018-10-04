@@ -1,6 +1,9 @@
 import json
 import sys
 import ROOT
+import numpy as np
+from numpy import *
+import math
 
 #Python Class that takes in a configuration file and a list of root files.
 #The bifurcation analysis is run over the files, and a root file is output with
@@ -37,16 +40,14 @@ class Bifurcator(object):
         for f in self.rootfile_list:
             ch.Add(f)
         basecuts = []
-        udotr = "(posx*dirx + posy*diry + posz*dirz)/sqrt(posx**2 + posy**2 + posz**2)"
-        
         if self.cdict['r_high'] is not None:
             basecuts.append("posr<"+str(self.cdict['r_high']))
         if self.cdict['r_low'] is not None:
             basecuts.append("posr>"+str(self.cdict['r_low']))
         if self.cdict['udotr_high'] is not None:
-            basecuts.append(udotr+"<"+str(self.cdict['udotr_high']))
+            basecuts.append("udotr<"+str(self.cdict['udotr_high']))
         if self.cdict['udotr_low'] is not None:
-            basecuts.append(udotr+">"+str(self.cdict['udotr_low']))
+            basecuts.append("udotr>"+str(self.cdict['udotr_low']))
         if self.cdict['E_high'] is not None: 
             basecuts.append("energy<"+str(self.cdict['E_high']))
         if self.cdict['E_low'] is not None: 
@@ -93,9 +94,6 @@ class Bifurcator(object):
                 outstring=outstring+delim+s
         return outstring
 
-    #NOTE: This method is deprecated; needs bringing up to speed with
-    #current version.  Specifically, cut1 is fixed to DC and cut2 is fixed
-    #to classifiers now.
     def FullBifurcateOutput(self,outputdir=None):
         if outputdir is None:
             print("Please specify an output directory to save the root file in.")
@@ -106,7 +104,7 @@ class Bifurcator(object):
         result = ROOT.TTree("boxes","values for a,b,c, and d boxes")
         #Initialize variables to fill with events passing preliminary cuts
         runID = np.zeros(1,dtype=int)
-        ratversion = np.zeros(1,dtype=str)
+        #ratversion = np.zeros(1,dtype=str)
         nhits = np.zeros(1,dtype=int)
         nhitsCleaned = np.zeros(1,dtype=int)
         triggerWord = np.zeros(1,dtype=int)
@@ -120,8 +118,10 @@ class Bifurcator(object):
         energy = np.zeros(1,dtype=float64)
         itr = np.zeros(1,dtype=float64)
         beta14 = np.zeros(1,dtype=float64)
-        cut1BranchFail = np.zeros(1,dtype=bool)
-        cut2BranchFail = np.zeros(1,dtype=bool)
+        posr3 = np.zeros(1,dtype=float64)
+        udotr = np.zeros(1,dtype=float64)
+        cut1BranchClean = np.zeros(1,dtype=bool)
+        cut2BranchClean = np.zeros(1,dtype=bool)
 
         a = np.zeros(1,dtype=int)
         b = np.zeros(1,dtype=int)
@@ -136,7 +136,7 @@ class Bifurcator(object):
 
         #Now, associate initialized variables with the TTree
         b_root.Branch('runID',runID, 'runID/I')
-        b_root.Branch('ratversion',ratversion, 'ratversion/C')
+        #b_root.Branch('ratversion',ratversion, 'ratversion/C')
         b_root.Branch('nhits',nhits, 'nhits/I')
         b_root.Branch('nhitsCleaned',nhitsCleaned, 'nhitsCleaned/I')
         b_root.Branch('triggerWord', triggerWord, 'triggerWord/I')
@@ -145,61 +145,90 @@ class Bifurcator(object):
         b_root.Branch('dcFlagged', dcFlagged, 'dcFlagged/D')
         b_root.Branch('uTDays',uTDays, 'uTDays/I')
         b_root.Branch('uTSecs',uTSecs, 'uTSecs/I')
-        b_root.Branch('uTNSecs',uTNsecs, 'uTNsecs/I')
+        b_root.Branch('uTNSecs',uTNSecs, 'uTNSecs/I')
         b_root.Branch('fitValid',fitValid, 'fitValid/O')
         b_root.Branch('energy',energy, 'energy/D')
         b_root.Branch('itr', itr, 'itr/D')
+        b_root.Branch('posr3',posr3, 'posr3/D')
+        b_root.Branch('udotr', udotr, 'udotr/D')
         b_root.Branch('beta14', beta14, 'beta14/D')
-        b_root.Branch('cut1BranchFail',cut1BranchFail, 'cut1BranchFail/O')
-        b_root.Branch('cut2BranchFail',cut2BranchFail, 'cut2BranchFail/O')
+        b_root.Branch('cut1BranchClean',cut1BranchClean, 'cut1BranchClean/O')
+        b_root.Branch('cut2BranchClean',cut2BranchClean, 'cut2BranchClean/O')
 
         a[0],b[0],c[0],d[0] = 0,0,0,0
+        basecuts = []
+        if self.cdict['r_high'] is not None:
+            basecuts.append("posr<"+str(self.cdict['r_high']))
+        if self.cdict['r_low'] is not None:
+            basecuts.append("posr>"+str(self.cdict['r_low']))
+        if self.cdict['udotr_high'] is not None:
+            basecuts.append("udotr<"+str(self.cdict['udotr_high']))
+        if self.cdict['udotr_low'] is not None:
+            basecuts.append("udotr>"+str(self.cdict['udotr_low']))
+        if self.cdict['E_high'] is not None: 
+            basecuts.append("energy<"+str(self.cdict['E_high']))
+        if self.cdict['E_low'] is not None: 
+            basecuts.append("energy>"+str(self.cdict['E_low']))
+        if self.cdict['Z_low'] is not None:
+            basecuts.append("posz>"+str(self.cdict['Z_low']*10.0))
+        if self.cdict['Z_high'] is not None:
+            basecuts.append("posz<"+str(self.cdict['Z_high']*10.0))
+        basecuts.append("fitValid==1")
+        basecuts.append("((dcFlagged&%s)==%s)" % (self.cdict["bifurpath_DCmask"],\
+                self.cdict["bifurpath_DCmask"]))
+        basecuts.append("((triggerWord&%s)==0)" % (self.cdict["path_trigmask"]))
+        cut1list = []
+        cut1list.append("((dcFlagged&%s)!=%s)" % (self.cdict["cut1_bifurDCmask"],\
+                self.cdict["cut1_bifurDCmask"]))
+        cut1list.append("((triggerWord&%s)!=0)" % (self.cdict["cut1_trigmask"]))
+        cut2list = []
+        cut2list.append("beta14>%s" % (self.cdict["cut2_b14_high"]))
+        cut2list.append("beta14<%s" % (self.cdict["cut2_b14_low"]))
+        cut2list.append("itr<%s" % (self.cdict["cut2_itr_low"]))
+        base = self.cutfuse(basecuts, "&&")
+       
         for rf in self.rootfile_list:
             rootfile=ROOT.TFile(rf,"READ")
             rootfile.cd()
             datatree=rootfile.Get("output")
+            #We define a formula for the preliminary cuts, as
+            #well as for each of the bifurcation boxes
+            basecut = ROOT.TTreeFormula("base_cut",base,datatree)
+            abox_cuts = base + "&&(!(%s))&&(!(%s))" % \
+                    (self.cutfuse(cut1list,"||"), self.cutfuse(cut2list,"||"))
+            bbox_cuts = base + "&&(!(%s))&&(%s)" % \
+                    (self.cutfuse(cut1list,"||"), self.cutfuse(cut2list,"||"))
+            cbox_cuts = base + "&&(%s)&&(!(%s))" % \
+                    (self.cutfuse(cut1list,"||"), self.cutfuse(cut2list,"||"))
+            dbox_cuts = base + "&&(%s)&&(%s)" % \
+                    (self.cutfuse(cut1list,"||"),self.cutfuse(cut2list,"||"))
+            acut = ROOT.TTreeFormula("abox_cut",abox_cuts,datatree)
+            bcut = ROOT.TTreeFormula("bbox_cut",bbox_cuts,datatree)
+            ccut = ROOT.TTreeFormula("cbox_cut",cbox_cuts,datatree)
+            dcut = ROOT.TTreeFormula("dbox_cut",dbox_cuts,datatree)
             for i in xrange(datatree.GetEntries()):
                 datatree.GetEntry(i)
-                if datatree.posr > self.cdict['r_high'] or \
-                        datatree.posr < self.cdict['r_low']:
+                #If this event fails the base cuts, continue
+                if not basecut.EvalInstance():
                     continue
-                if datatree.fitValid is False:
-                    continue
-                if datatree.energy > self.cdict['E_high'] or \
-                        datatree.energy < self.cdict['E_low']:
-                    continue
-                if ((~datatree.dcFlagged) & self.cdict["bifurpath_DCmask"]) > 0:
-                    continue
-                if ((datatree.triggerWord) & self.cdict["path_trigmask"]) > 0:
-                    continue
-                cut1_clean = True
-                cut2_clean = True
-                if self.cdict["dcs_only"] is false and self.cdict["fits_only"] is false:
-                    #We're using a dc branch and a fit branch
-                    if (((~datatree.dcFlagged) & self.cdict["cut1_bifurDCmask"]) > 0):
-                        cut1_clean = False
-                    if ((datatree.trigWord & self.cdict["cut1_trigmask"]) > 0):
-                        cut1_clean = False
-                    if (datatree.beta14 < self.cdict["cut2_b14_low"] or \
-                            self.cdict["cut2_b14_high"] < datatree.beta14):
-                        cut2_clean = False
-                    if (datatree.itr < self.cdict["cut2_itr_low"]):
-                        cut2_clean = False
-                else:
-                    print("OPTIONS FOR DC AND FIT ONLY NOT YET IMPLEMENTED.")
-                    print("JUST LOOK AT BIFURCATOR.CC AND ADD THE LOGIC.")
-                    sys.exit()
-                #Increment the box values and save the ntuple info
-                if cut1_clean and cut2_clean:
+                if acut.EvalInstance():
                     a[0]+=1
-                elif cut1_clean and not cut2_clean:
+                    cut1_clean = True
+                    cut2_clean = True
+                if bcut.EvalInstance():
+                    cut1_clean = True
+                    cut2_clean = False
                     b[0]+=1
-                elif cut2_clean and not cut1_clean:
+                if ccut.EvalInstance():
+                    cut1_clean = False
+                    cut2_clean = True 
                     c[0]+=1
-                elif not cut2_clean and not cut1_clean:
+                elif dcut.EvalInstance():
+                    cut1_clean = False
+                    cut2_clean = False
                     d[0]+=1
                 runID[0] = datatree.runID
-                ratversion[0] = datatree.ratversion
+                #ratversion[0] = ch.ratversion
                 nhits[0] = datatree.nhits
                 nhitsCleaned[0] = datatree.nhitsCleaned
                 triggerWord[0] = datatree.triggerWord
@@ -213,11 +242,16 @@ class Bifurcator(object):
                 energy[0] = datatree.energy
                 itr[0] = datatree.itr
                 beta14[0] = datatree.beta14
+                posr3[0] = datatree.posr3
+                udotr[0] = datatree.udotr
                 cut1BranchClean[0] = cut1_clean
                 cut2BranchClean[0] = cut2_clean
                 b_root.Fill()
-            result.Fill() #saves a, b, c, and d
-            self.bifurcation_rootfile = bfile
+        result.Fill() #saves a, b, c, and d
+        bfile.cd()
+        b_root.Write()
+        result.Write()
+        self.bifurcation_rootfile = bfile
 
     def SaveBifurcationSummary(self,savedir,savename):
         savesacloc = savedir+"/"+savename

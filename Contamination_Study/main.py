@@ -133,8 +133,10 @@ if __name__ == '__main__':
             print("ANALYSIS_ROOTS: " + str(physics_roots))
         Bifurcator = bi.Bifurcator(rootfiles=physics_roots,config_dict=config_dict)
         Bifurcator.Bifurcate()
+        Bifurcator.FullBifurcateOutput(outputdir=RESULTDIR)
         if NOSAVE is False:
             Bifurcator.SaveBifurcationSummary(RESULTDIR,"bifurcation_boxes.json")
+            Bifurcator.SaveBifurcationRoot()
      
     if ESTIMATECONTAMINATION is True:
         bifurcation_summary = None
