@@ -24,28 +24,49 @@ cuts_default_notes.txt.  A good example structure for the json format is in
 cuts_default.json.  Tell the program to use your config file by giving the file 
 name to the --configfile flag.
 
-ii) Place all of your calibration data ntuples into a single directory.  When
-running main.py, you will want to give the directory path using the --calibdir flag. 
+NOTE: The "run_setup" mostly control what your output sacrifice plots look like,
+as well as what values you want to plot the sacrifice as a function of.
+CUTS_TO_DO picks whether to evaluate DC sacrifice ("cut1"), classifier sacrifice
+("cut2"), or the classifier Data/MC comparison ("cut2_DataMCComp").
 
-iii) For the instrumental contamination estimate, place all of your calibration
+ii) Take your data and process it with a subtupler (also in a SNOTools directory) so
+that you have ntuple files with the AV z-shift, energy corrections, and the
+posr3 and udotr variables.
+
+ii) Place all of your data subtuples into a single directory.  
+
+iv) Look at the script in /bash/SacrificeRunner.sh.  Modify the file so when run,
+the program will use your config file, point to your data directory, source your
+version of RAT, and run from the right home directory. 
+
+
+GUIDE TO A QUICK START OF EVALUATING THE INSTRUMENTAL CONTAMINATIONS.
+
+i) Perform all of the sacrifice evaluation steps described above, but using your
+calibration data.
+
+ii) For the instrumental contamination estimate, place all of your physics 
 data ntuples into another single directory.  When running main.py, you will want to
-give this directory path using the --analysis dir flag
+give this directory path using the --analysisdir flag
 
-iv) Set up your plotting preferences and variables you want to calculate the
-DC sacrifice distribution for using ./config/setup.json.  For the DC sacrifice,
-you want "CUTSTODO" to have ["cut1"] only, and common sacrifice variables used
-for the water analysis are "posr3", "udotr", and "energy".  Note that if you
-want to use "posr3", your data must have the "posr3" entry added to the ntuples
-using the subtupler code (see ./misc/subtupleMaker\_N16.cpp for an example
-of the subtuple processor you could use).
+iii) Run main.py, but giving the --bifurcation flag.  Make sure that the --jobname
+flag is the same name as the jobname that has your calibration sacrifice data; the
+config from your sacrifice analysis will be loaded.
+
+iv) Now run main.py again with --contamination --LETA to see the contamination
+estimates, given your bifurcation box values and estimated DC/classifier sacrifices. 
 
 
-ANALYSES
+
+
+
+
+A MORE IN-DETAIL DISCUSSION OF THE ANALYSIS CHAIN
 
 Sacrifice: To calculate the sacrifice of physics events in N16 data, do:
 
-python main.py --calibsacrifice --calibdir /path/to/calibntuples/ --configfile
-theconfigfile.json --plots
+python main.py --sacrifice --sacdir_data /path/to/calibntuples/ --configfile
+theconfigfile.json --showplots --saveplots
 
 
 Results of the sacrifice for all runs and on a run-by-run detail are saved to the
@@ -64,7 +85,7 @@ each bifurcation box are output to "bifurcation_boxes.json" in the results direc
 
 Contamination estimate: First you must either:
 
-1) Also give the --calibsacrifice and --bifurcate flags when performing this analysis
+1) Also give the --sacrifice and --bifurcate flags when performing this analysis
 2) Give a --jobnum that corresponds to a directory in /output/results_j{JOBNUM} that
 already has information from the sacrifice and contamination estimates present.
 
@@ -96,6 +117,6 @@ A second approache to calculating the instrumental contamination in the presence
 of a large amount of signal (as is common for background ROIs at lower energies
 with high amounts of Cherenkov events) can be done with
 
-python main.py --contamination --lowE
+python main.py --contamination --LETA
 
 

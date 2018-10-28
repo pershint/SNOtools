@@ -14,7 +14,8 @@ Events that are considered pathological are not included in either the
                sacrifice or contamination studies.
 fitValid: if true, only events with a valid reconstruction will be used
 to estimate the sacrifice with calibration data/instrumental contamination with
-analysis data.
+analysis data.  If false, events with AND without fitValid will be considered.
+
 
 isCal: if true, only events with the FECD PMT hit in the calibration data
 will be used to estimate the sacrifice with calibration data. 
@@ -36,7 +37,7 @@ calibration data. Any
 event with one of the flags in this mask will not be used in the sacrifice/
 contamination studies.
 
-(Relevant for contamination study only. For the N16 DC sacrifice analysis,
+(Relevant for contamination study only. For most standalone DC sacrifice analyses,
  you'll want sacpath_DCmask to be set to zero.)
 
 
@@ -44,7 +45,7 @@ bifurpath_DCmask: pathological cuts used in making bifurcation boxes with
 analysis data.  If an event has any of these flags, it will not be put
  into the a,b,c,d boxes.
 
-(Relevant for contamination study only. For the N16 DC sacrifice analysis,
+(Relevant for contamination study only. For most standalone DC sacrifice analyses,
  you'll want bifurpath_DCmask to be set to zero.)
 
 (If estimating the sacrifice for use in the contamination study,
@@ -54,27 +55,31 @@ unless you know why you want them to be different.)
 path_trigmask: Any events with a flag from this trigger mask
  will not be considered/used for the sacrifice/contamination studies
 (ND contamination analysis default is esumhi, esumlo, ped, pgt)
-(When doing DC sacrifice studies, you'll want this to be set to zero)
+(When doing most DC sacrifice studies, you'll want this to be set to zero)
 
 ###---------CUTS AND TOGGLES FOR SACRIFICE & BIFURCATION PROCESS-----------------###
-cut1_sacDCmask: Use rat-tools/DataCleaningTools/dcflags.py to make your mask.
-this mask will be applied when quantifying the DC sacrifice on your calibration
-data.
+
+cut1_sacDCmask: Use rat-tools/DataCleaningTools/dcflags.py to make your mask (any 
+events with a flag in the mask you make are considered "dirty" events). Then,
+input that number into this entry; this mask will be applied when 
+quantifying the DC sacrifice on your input sacrifice
+analysis files (i.e. when using the --sacrifice flag).
 
 cut1_bifurDCmask: Use rat-tools/DataCleaningTools/dcflags.py to make your mask.
-this mask will be applied when filling the bifurcation boxes on your analysis
-data.
+this mask will be applied on the data that fills the bifurcation boxes on your analysis
+data (i.e. files contained in the directory defined with --analysisdir)
+Events that fail this cut alone will go into the b box.
 
-NOTE: The need for these two masks came from the Neckcut having an artificially
+WATER PHASE NOTE: The need for these two masks came from the Neckcut having an artificially
 inflated sacrifice during the November 2017 scan.  Therefore, it is not used when
 quanfiying the sacrifice (was found negligible in the May 2017 scan), but
  still plays a role in the bifurcation.
 
-cut1_trigmask: default is just OWLEH
-Events failing either of the above only go into the b box
-
 cut2_b14, cut2_itr defaults: -0.12 < b14 < 0.95, itr<0.55
-Events failing b14 and/or itr (while DC is clean) go into the c box.
+These are the cuts used when either analyzing the classifier sacrifice directly,
+or performing the data/MC comparison of the classifiers.  Additionally, for
+the bifurcation analysis, these cuts indicate whether or not events fail the
+classifier cut of the bifurcation analysis (i.e. go into the c box).
 
 Events failing both of the above cut sets will go into the d box.
 

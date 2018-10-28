@@ -89,9 +89,6 @@ class SacrificeAnalyzer(object):
             if self.cdict['fitValid'] is True: 
                 self.precuts_data.append("fitValid==1")
                 self.precuts_mc.append("fitValid==1")
-            else:
-                self.precuts_data.append("fitValid==0")
-                self.precuts_mc.append("fitValid==0")
         if self.cdict['AVudotrCut'] is not None:
             if self.cdict['AVudotrCut'] is True:
                 rcut = self.cdict["AVudotrCut_rcut"]
@@ -273,7 +270,7 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
         topnames = sortednames[(len(sortednames)-(topnumber+1)):len(sortednames)]
         self.cut1_mask['dcmask_cutnames'] = topnames
 
-    def ShowPlottedSacrifice(self,fittotal=True,title=None,savedir="."):
+    def ShowPlottedSacrifice(self,SAVEPLOTS,SHOWPLOTS,fittotal=True,title=None,savedir="."):
         sns.set_style("whitegrid")
         xkcd_colors = ['black','slate blue', 'fluro green', 'brown', 'blue',
                 'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'leaf',
@@ -336,7 +333,10 @@ class DCSacrificeAnalyzer(SacrificeAnalyzer):
         else: 
             plt.title(title,fontsize=36)
         variable = self.sac_percut_metadata["variable"]
-        plt.savefig(savedir+"/DCSac_%s.pdf"%(variable))
+        if SAVEPLOTS is True:
+            plt.savefig(savedir+"/DCSac_%s.pdf"%(variable))
+        if SHOWPLOTS is True:
+            plt.show()
         #plt.show()
         plt.close()
 
@@ -573,41 +573,8 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
         #plt.show()
         plt.close()
     
-    def Plot_AccComparison(self,title="Heres a plot title",xlabel=None):
-        if self.sac_percut is None:
-            print("You must first analyze the input root data!")
-            return
-        sns.set_style("whitegrid")
-        xkcd_colors = ['black', 'red', 'brown', 'blue',
-                'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
-                'aqua blue','vomit', 'black','twilight']
-        sns.set_palette(sns.xkcd_palette(xkcd_colors))#,len(self.sac_percut)))
-        fig = plt.figure()
-        ax = fig.add_subplot(1,1,1)
-        for cut in self.sac_percut:
-            plotterdat = self._DeleteEmptyBins(self.sac_percut[cut]) 
-            print(plotterdat) 
-            plt.errorbar(x=plotterdat.vardat, 
-                    y=plotterdat.fractional_acceptance,
-                    yerr=plotterdat.fs_uncertainty,
-                    linestyle='none', marker='o', label=cut, markersize=6,
-                    elinewidth=3, capsize=0)
-        legend = plt.legend(loc=3,frameon=1)
-        frame = legend.get_frame()
-        frame.set_facecolor("white")
-        y_formatter = mpl.ticker.ScalarFormatter(useOffset=False)
-        ax.yaxis.set_major_formatter(y_formatter)
-        plt.ylabel("Fractional acceptance",fontsize=34)
-        if xlabel is None:
-            plt.xlabel(self.sac_percut_metadata["variable"],fontsize=34)
-        else:
-            plt.xlabel(xlabel,fontsize=34)
-        plt.tick_params(labelsize=32)
-        plt.title(title, fontsize=36)
-        #plt.show()
-        plt.close()
-    
-    def PlotRatio(self,fittotal=True,title="Title for graph",xlabel="nhits",savedir="."):
+    def PlotDataMCSacRatio(self, SAVEPLOTS,SHOWPLOTS,fittotal=True,title="Title for graph",xlabel="nhits",evtype='prompt',savedir="."):
+        '''Plots the ratio of the data to MC total sacrifice bin-by-bin, as well as the best fit'''
         if self.sac_percut is None:
             print("You must first analyze the input root data!")
             return
@@ -620,28 +587,26 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
         fig.set_size_inches(18.5,11.5)
         ax = fig.add_subplot(1,1,1)
         self.sac_percut = self._DeleteEmptyBins_all(self.sac_percut) 
-        ratio = pandas.Series(self.sac_percut["Data total"].fractional_acceptance /
-                self.sac_percut["MC total"].fractional_acceptance) 
+        ratio = pandas.Series(self.sac_percut[evtype]['data']["total"].fractional_sacrifice /
+                self.sac_percut[evtype]['MC']["total"].fractional_sacrifice) 
         ratio_unc = np.sqrt(self.sac_percut["MC total"].fs_uncertainty**2 + \
                 self.sac_percut["Data total"].fs_uncertainty**2)
         ratio_unc = pandas.Series(ratio_unc)
-        self.sac_percut["ratio"] = ratio
-        self.sac_percut["ratio_unc"] = ratio_unc
-        plt.errorbar(x=self.sac_percut["MC total"].vardat, 
-                y=self.sac_percut["ratio"],
-                yerr=self.sac_percut["ratio_unc"],
+        plt.errorbar(x=self.sac_percut['evtype']['data']["total"].vardat, 
+                y=ratio,
+                yerr=ratio_unc,
                 linestyle='none', marker='o', label="Data/MC Ratio", markersize=6,
                 elinewidth=3, capsize=0)
         if fittotal is True:
-            popt, pcov = spc.curve_fit(self._flatline, self.sac_percut["MC total"].vardat, self.sac_percut["ratio"],
-                    p0=[0.98], sigma=self.sac_percut["ratio_unc"])
+            popt, pcov = spc.curve_fit(self._flatline, self.sac_percut[evtype]['data']['total'].vardat, ratio,
+                    p0=[0.98], sigma=ratio_unc)
             #one standard deviation
             print("BEST FIT: " + str(popt))
             print("PCOVARIANCE: " + str(pcov))
             stdev = np.sqrt(np.diag(pcov))
             plt.axhline(popt, linewidth=3, alpha=0.8, color='k',label= r'fit: $\mu = %f,unc = %f$' % (float(popt[0]), float(stdev[0])))
-            print("WEIGHTED STANDARD DEVIATION FROM FLAT: " + str(self._weighted_stdev(self.sac_percut["ratio"],
-                float(popt[0]),self.sac_percut["ratio_unc"])))
+            print("WEIGHTED STANDARD DEVIATION FROM FLAT: " + str(self._weighted_stdev(ratio,
+                float(popt[0]),ratio_unc)))
         legend = plt.legend(loc=3,frameon=1)
         frame = legend.get_frame()
         frame.set_facecolor("white")
@@ -660,7 +625,10 @@ class DataMCClassAnalyzer(SacrificeAnalyzer):
         plt.tick_params(labelsize=32)
         plt.title(title, fontsize=36)
         variable = self.sac_percut_metadata["variable"]
-        plt.savefig(savedir+"/DataMCComp_%s.pdf"%(variable))
+        if SAVEPLOTS is True:
+            plt.savefig(savedir+"/DataMCRatio_%s.pdf"%(variable))
+        if SHOWPLOTS is True:
+            plt.show()
         #plt.show()
         plt.close()
 
@@ -746,7 +714,7 @@ class ClassSacrificeAnalyzer(SacrificeAnalyzer):
         self.sac_percut_metadata = {"binwidth":((xmax-xmin)/float(self.nbins)),"variable":varname}
         #graphdict has the sacrifice information for each cut. Now, let's plot it.
 
-    def ShowPlottedSacrifice(self,fittotal=True,title=None,savedir="."):
+    def ShowPlottedSacrifice(self,SAVEPLOTS,SHOWPLOTS,fittotal=True,title=None,savedir="."):
         sns.set_style("whitegrid")
         xkcd_colors = ['slate blue', 'black', 'brown', 'blue',
                 'yellowish orange', 'warm pink', 'light eggplant', 'clay', 'red', 'leaf',
@@ -790,7 +758,10 @@ class ClassSacrificeAnalyzer(SacrificeAnalyzer):
             plt.title(title,fontsize=36)
         #plt.savefig("sacrifice_b14itr_%s.pdf"%(self.sac_percut_metadata["variable"]))
         variable = self.sac_percut_metadata["variable"]
-        plt.savefig(savedir+"/ClassSac_%s.pdf"%(variable))
+        if SAVEPLOTS is True:
+            plt.savefig(savedir+"/ClassSac_%s.pdf"%(variable))
+        if SHOWPLOTS is True:
+            plt.show()
         #plt.show()
         plt.close()
 

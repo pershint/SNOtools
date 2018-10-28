@@ -1,7 +1,8 @@
 #/bin/bash -l
 
 #This bash script feeds in an array of energy ranges and starts Contamination Study jobs for each one.
-
+#Essentially, this is a demonstration of how to override energy values in the loaded config file
+#(the loaded values will be saved over the config file when you do this)
 
 RUNDIR=/home/onetrueteal/Programs/SNOrat/rat/tools/SNOtools/Contamination_Study/
 ROOTSRC=/home/onetrueteal/Programs/SNOrat/rat/rat-dev.sh

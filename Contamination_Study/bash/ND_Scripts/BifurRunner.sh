@@ -2,7 +2,7 @@
 
 #This bash script feeds in an array of energy ranges and starts Contamination Study jobs for each one.
 
-TB=3
+TB=6
 
 ROITYPE=NDROI/contamination
 FILEEXTENS=ND

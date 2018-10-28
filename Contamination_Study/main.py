@@ -10,16 +10,17 @@ args = ap.args
 DEBUG = args.debug
 NOSAVE=args.NOSAVE
 CONFIGFILE=args.CONFIGFILE
-CALIBSACANALYSIS=args.CALIBSACANALYSIS
+SACANALYSIS=args.SACANALYSIS
 BIFURCATE=args.BIFURCATE
 LETACONTAM=args.LETACONTAM
 ESTIMATECONTAMINATION=args.ESTIMATECONTAMINATION
-PLOTS=args.PLOTS
+SHOWPLOTS=args.SHOWPLOTS
+SAVEPLOTS=args.SAVEPLOTS
 ERANGE=args.ERANGE
 ZRANGE=args.ZRANGE
 JOBNAME=args.JOBNAME
-CALIBDIR=args.CALIBDIR
-CALIBMCDIR=args.CALIBMCDIR
+SACRIFICEDIR=args.SACRIFICEDIR
+SACRIFICEMCDIR=args.SACRIFICEMCDIR
 ANALYSISDIR=args.ANALYSISDIR
 
 import numpy as np
@@ -39,11 +40,16 @@ basepath = os.path.dirname(__file__)
 MAINDIR = os.path.dirname(__file__)
 CONFIGDIR = os.path.abspath(os.path.join(MAINDIR,"config"))
 
-results_exist = True 
+results_exist = True
+config_exist = True
 RESULTDIR = os.path.abspath(os.path.join(MAINDIR, "output","results_j"+str(JOBNAME)))
 if not os.path.exists(RESULTDIR):
     results_exist = False
+    config_exist = False
     os.makedirs(RESULTDIR)
+if results_exist and not os.path.exists(RESULTDIR+"/used_cutsconfig.json"):
+    config_exist = False
+    print("CONFIG IN FACT DOES NOT XIST")
 if not os.path.exists(RESULTDIR+"/plots"):
     os.makedirs(RESULTDIR+"/plots")
 DBDIR = os.path.abspath(os.path.join(MAINDIR, "DB"))
@@ -52,10 +58,16 @@ if __name__ == '__main__':
     #Get your run files to load
     #Load the setup JSON defining what plots/variables to use
     #for sacrifice estimate
-    with open("./config/setup.json","r") as f:
-        setup_dict = json.load(f)
-    if CALIBSACANALYSIS or BIFURCATE is True:
-        if results_exist is False:
+    setup_dict = {}
+    if SACANALYSIS or BIFURCATE is True:
+        if config_exist is True:
+            try:
+                print("RESULTDIR: " + str(RESULTDIR))
+                config_dict = ru.LoadJson(RESULTDIR,"used_cutsconfig.json")
+            except IOError:
+                print("Something has gone wrong loading your config file!")
+                sys.exit(1)
+        else:
             ConfigParser = cp.ConfigParser(CONFIGDIR)
             print("CONFIGDIR: " + str(CONFIGDIR))
             config_dict = ConfigParser.Load_JsonConfig(CONFIGFILE)
@@ -67,23 +79,21 @@ if __name__ == '__main__':
                 config_dict["E_high"] = float(ERANGE[1])
             if NOSAVE is False:
                 ConfigParser.SaveConfiguration(config_dict,RESULTDIR,"used_cutsconfig.json")
-        else:
-            config_dict = ru.LoadJson(RESULTDIR,"used_cutsconfig.json")
-
-    if CALIBSACANALYSIS is True:
-        calib_data = glob.glob("%s/*.ntuple.root"%(CALIBDIR))
-        calib_mc = glob.glob("%s/*.ntuple.root"%(CALIBMCDIR))
-        print("NUMBER OF N16 FILES: " + str(len(calib_data)))
-        print("NUMBER OF N16 MC FILES: " + str(len(calib_mc)))
+    setup_dict = config_dict["run_setup"]
+    if SACANALYSIS is True:
+        sac_data = glob.glob("%s/*.root"%(SACRIFICEDIR))
+        sac_mc = glob.glob("%s/*.root"%(SACRIFICEMCDIR))
+        print("NUMBER OF N16 FILES: " + str(len(sac_data)))
+        print("NUMBER OF N16 MC FILES: " + str(len(sac_mc)))
         if DEBUG is True:
-            print("N16_ROOTS: " + str(calib_data))
-        ru.save_sacrifice_list(RESULTDIR,calib_data,"calibration_data_used.json")
-        ru.save_sacrifice_list(RESULTDIR,calib_mc,"calibration_MCdata_used.json") 
+            print("N16_ROOTS: " + str(sac_data))
+        ru.save_sacrifice_list(RESULTDIR,sac_data,"sacrifice_data_used.json")
+        ru.save_sacrifice_list(RESULTDIR,sac_mc,"sacrifice_MCdata_used.json") 
         CUTS_TODO = setup_dict['CUTS_TODO']
         SACRIFICE_VARIABLES = setup_dict['SACRIFICE_VARIABLES']
         SacComp_results = {} 
         try:
-            SacComp_results = ru.LoadJson(RESULTDIR,"calib_DCSacClassComp_totals.json")
+            SacComp_results = ru.LoadJson(RESULTDIR,"sacrifice_DCSacClassComp_totals.json")
         except IOError:
             print("No Sacrifice estimates done previously. Initializing empty dict")
             pass 
@@ -93,35 +103,44 @@ if __name__ == '__main__':
         for variable in SACRIFICE_VARIABLES:
             for cut in CUTS_TODO:
                 if cut == 'cut1': 
-                    DCSacs = sa.DCSacrificeAnalyzer(rootfiles_data=calib_data, cuts_dict=config_dict)
+                    DCSacs = sa.DCSacrificeAnalyzer(rootfiles_data=sac_data, cuts_dict=config_dict)
                     DCSacs.SetBinNumber(setup_dict["BINNUM_CUT1"])
+                    if DEBUG:
+                        print("ANALYZING DATA CLEANING SACRIFICE W/R/T VARIABLE: " + str(variable))
                     DCSacs.AnalyzeData(var=variable)
                     SacComp_results['cut1'][variable] = DCSacs.GetFitTotalAndUncertainties() 
-                    if PLOTS is True:
-                        DCSacs.ShowPlottedSacrifice(title=setup_dict["PLOT_TITLE_CUT1"],
+                    if SHOWPLOTS is True or SAVEPLOTS is True:
+                        DCSacs.ShowPlottedSacrifice(SAVEPLOTS,SHOWPLOTS,
+                                title=setup_dict["PLOT_TITLE_CUT1"],
                                 savedir="%s/%s"%(RESULTDIR,"plots"))
                 elif cut == 'cut2':
-                    ClassSacs = sa.ClassSacrificeAnalyzer(rootfiles_data=calib_data,
+                    ClassSacs = sa.ClassSacrificeAnalyzer(rootfiles_data=sac_data,
                              cuts_dict=config_dict)
                     ClassSacs.SetBinNumber(setup_dict["BINNUM_CUT2"])
                     ClassSacs.AnalyzeData(var=variable)
                     SacComp_results['cut2'][variable] = ClassSacs.GetFitTotalAndUncertainties()
                 elif cut == 'cut2_DataMCComp':
-                    ClassComps = sa.DataMCClassAnalyzer(rootfiles_data=calib_data,
-                            rootfiles_mc=calib_mc, cuts_dict=config_dict)
-                    ClassComps.SetBinNumber(setup_dict["BINNUM_CUT2"])
-                    ClassComps.AnalyzeData(var=variable)
-                    SacComp_results['cut2_DataMCComp'][variable] = ClassComps.GetFitTotalAndUncertainties() 
-                    if variable == "energy":
-                        ClassComps.SaveRatioToCSV(RESULTDIR,"RatioVsEnergy.csv")
-                    if PLOTS is True: 
-                        ClassComps.PlotRatio(title=setup_dict["PLOT_TITLE_CUT2"],
-                                savedir="%s/%s"%(RESULTDIR,"plots"))
+                    have_mc = True
+                    if len(sac_mc)==0:
+                        print("No MC data loaded!  Cannot complete Data/MC comparison")
+                        have_mc = False
+                    if have_mc:
+                        ClassComps = sa.DataMCClassAnalyzer(rootfiles_data=sac_data,
+                                rootfiles_mc=sac_mc, cuts_dict=config_dict)
+                        ClassComps.SetBinNumber(setup_dict["BINNUM_CUT2"])
+                        ClassComps.AnalyzeData(var=variable)
+                        SacComp_results['cut2_DataMCComp'][variable] = ClassComps.GetFitTotalAndUncertainties() 
+                        if variable == "energy":
+                            ClassComps.SaveRatioToCSV(RESULTDIR,"RatioVsEnergy.csv")
+                        if SHOWPLOTS is True or SAVEPLOTS is True:
+                            ClassComps.PlotRatio(SAVEPLOTS,SHOWPLOTS,
+                                    title=setup_dict["PLOT_TITLE_CUT2"],
+                                    savedir="%s/%s"%(RESULTDIR,"plots"))
                 else:
                     print("Cut type not supported.  Please use only cut1 and/or cut2"+\
                             " in your setup file.")
         if NOSAVE is False:
-            with open("%s/calib_DCSacClassComp_totals.json"%(RESULTDIR),"w") as f:
+            with open("%s/sacrifice_DCSacClassComp_totals.json"%(RESULTDIR),"w") as f:
                 json.dump(SacComp_results,f,sort_keys=True,indent=4)
 
 
@@ -148,7 +167,7 @@ if __name__ == '__main__':
                     " analysis run?")
             pass
         try:
-            cut_sac_summary = ru.LoadJson(RESULTDIR,"calib_DCSacClassComp_totals.json")
+            cut_sac_summary = ru.LoadJson(RESULTDIR,"sacrifice_DCSacClassComp_totals.json")
         except IOError:
             print("Cut sacrifice Summary loading error.  Was this "+\
                     " analysis run?")
@@ -166,7 +185,7 @@ if __name__ == '__main__':
             CE = ca.NDContamination(bifurcation_summary,cut_sac_summary)
             CE.CalculateContaminationValues() #Calculate contamination eqns.
             values = CE.BootstrapCL(0.683,100000) #Estimate upper end of y1y2
-            if PLOTS is True:
+            if SHOWPLOTS is True:
                 values=values
                 plt.hist(values,100,range=(min(values),max(values)))
                 plt.xlabel(r"Total estimated contamination (y1y2$\beta$)")

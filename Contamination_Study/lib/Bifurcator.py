@@ -118,6 +118,13 @@ class Bifurcator(object):
         energy = np.zeros(1,dtype=float64)
         itr = np.zeros(1,dtype=float64)
         beta14 = np.zeros(1,dtype=float64)
+        posx = np.zeros(1,dtype=float64)
+        posy = np.zeros(1,dtype=float64)
+        posz = np.zeros(1,dtype=float64)
+        dirx = np.zeros(1,dtype=float64)
+        diry = np.zeros(1,dtype=float64)
+        dirz = np.zeros(1,dtype=float64)
+        posr = np.zeros(1,dtype=float64)
         posr3 = np.zeros(1,dtype=float64)
         udotr = np.zeros(1,dtype=float64)
         cut1BranchClean = np.zeros(1,dtype=bool)
@@ -149,6 +156,13 @@ class Bifurcator(object):
         b_root.Branch('fitValid',fitValid, 'fitValid/O')
         b_root.Branch('energy',energy, 'energy/D')
         b_root.Branch('itr', itr, 'itr/D')
+        b_root.Branch('posx',posx, 'posx/D')
+        b_root.Branch('posy',posy, 'posy/D')
+        b_root.Branch('posz',posz, 'posz/D')
+        b_root.Branch('dirx',dirx, 'dirx/D')
+        b_root.Branch('diry',diry, 'diry/D')
+        b_root.Branch('dirz',dirz, 'dirz/D')
+        b_root.Branch('posr',posr, 'posr/D')
         b_root.Branch('posr3',posr3, 'posr3/D')
         b_root.Branch('udotr', udotr, 'udotr/D')
         b_root.Branch('beta14', beta14, 'beta14/D')
@@ -242,6 +256,13 @@ class Bifurcator(object):
                 energy[0] = datatree.energy
                 itr[0] = datatree.itr
                 beta14[0] = datatree.beta14
+                posx[0] = datatree.posx
+                posy[0] = datatree.posy
+                posz[0] = datatree.posz
+                dirx[0] = datatree.dirx
+                diry[0] = datatree.diry
+                dirz[0] = datatree.dirz
+                posr[0] = datatree.posr
                 posr3[0] = datatree.posr3
                 udotr[0] = datatree.udotr
                 cut1BranchClean[0] = cut1_clean

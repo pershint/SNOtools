@@ -12,8 +12,10 @@ parser.add_argument('--nosave', dest='NOSAVE',action='store_true',
         help='Do not save any outputs; ensures no writing is done')
 parser.add_argument('--debug', dest='debug',action='store_true',
         help='Run code in debug mode')
-parser.add_argument('--plots', dest='PLOTS',action='store_true',
+parser.add_argument('--showplots', dest='SHOWPLOTS',action='store_true',
         help='Show sacrifice distribution and fit plots')
+parser.add_argument('--saveplots', dest='SAVEPLOTS',action='store_true',
+        help='Save sacrifice distribution and fit plots')
 parser.add_argument('--jobname', dest='JOBNAME', action='store',
         help='Specify this jobs number among others.  Will save results'+\
                 'to ./output/results_jN')
@@ -27,16 +29,16 @@ parser.add_argument('--analysisdir', dest='ANALYSISDIR',action='store',
         type=str,help='Specify the directory where the analysis files'+\
                 'are stored.  Will read all files ending with .ntuple.root'+\
                 'from the directory. Default: ./ntuples/physics_data/')
-parser.add_argument('--calibdir_data', dest='CALIBDIR',action='store',
-        type=str,help='Specify the directory where the calibration files'+\
+parser.add_argument('--sacdir_data', dest='SACRIFICEDIR',action='store',
+        type=str,help='Specify the directory where the files that will be analyzed'+\
+                ' for sacrifice are stored.  Will read all files ending with .ntuple.root'+\
+                'from the directory. Default: ./ntuples/sacrifice/data/')
+parser.add_argument('--sacdir_mc', dest='SACRIFICEMCDIR',action='store',
+        type=str,help='Specify the directory where the simulated sacrifice files '+\
                 'are stored.  Will read all files ending with .ntuple.root'+\
-                'from the directory. Default: ./ntuples/calibration/')
-parser.add_argument('--calibdir_mc', dest='CALIBMCDIR',action='store',
-        type=str,help='Specify the directory where the simulated calibration files '+\
-                'are stored.  Will read all files ending with .ntuple.root'+\
-                'from the directory. Default: ./ntuples/calibration/MC/')
-parser.add_argument('--calibsacrifice', dest='CALIBSACANALYSIS',action='store_true',
-        help='Runs the sacrifice estimate processor on calibration data selected')
+                'from the directory. Default: ./ntuples/sacrifice/MC/')
+parser.add_argument('--sacrifice', dest='SACANALYSIS',action='store_true',
+        help='Runs the sacrifice estimate processor on the data directory selected')
 parser.add_argument('--bifurcate', dest='BIFURCATE',action='store_true',
         help='Run the bifurcation analysis on files in --analysisdir.')
 parser.add_argument('--contamination', dest='ESTIMATECONTAMINATION',
