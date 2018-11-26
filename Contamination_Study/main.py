@@ -136,6 +136,23 @@ if __name__ == '__main__':
                             ClassComps.PlotRatio(SAVEPLOTS,SHOWPLOTS,
                                     title=setup_dict["PLOT_TITLE_CUT2"],
                                     savedir="%s/%s"%(RESULTDIR,"plots"))
+                elif cut == 'cut1_DataMCComp':
+                    have_mc = True
+                    if len(sac_mc)==0:
+                        print("No MC data loaded!  Cannot complete Data/MC comparison")
+                        have_mc = False
+                    if have_mc:
+                        DCComps = sa.DataMCDCAnalyzer(rootfiles_data=sac_data,
+                                rootfiles_mc=sac_mc, cuts_dict=config_dict)
+                        DCComps.SetBinNumber(setup_dict["BINNUM_CUT1"])
+                        DCComps.AnalyzeData(var=variable)
+                        SacComp_results['cut1_DataMCComp'][variable] = DCComps.GetFitTotalAndUncertainties() 
+                        if variable == "energy":
+                            DCComps.SaveRatioToCSV(RESULTDIR,"DCRatioVsEnergy.csv")
+                        if SHOWPLOTS is True or SAVEPLOTS is True:
+                            DCComps.PlotRatio(SAVEPLOTS,SHOWPLOTS,
+                                    title=setup_dict["PLOT_TITLE_CUT1"],
+                                    savedir="%s/%s"%(RESULTDIR,"plots"))
                 else:
                     print("Cut type not supported.  Please use only cut1 and/or cut2"+\
                             " in your setup file.")

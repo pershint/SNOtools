@@ -1,20 +1,20 @@
 {
-    "comments": "Partial fill data cleaning cuts sacrifice mask", 
+    "comments": "Default N16 ROI selection, no neckcut", 
     "E_high": 9.0, 
-    "E_low": 0.0, 
+    "E_low": 5.0, 
     "nhits_low": 0,
     "nhits_high": 9900, 
     "Z_high": 600, 
     "Z_low": -600, 
-    "fitValid": false,
-    "isCal": false,
+    "fitValid": true,
+    "isCal": true,
     "AVudotrCut": false, 
     "r_high": 5300, 
     "r_low": 0,
     "udotr_low": -1.0,
     "udotr_high": 1.0, 
     "bifurpath_DCmask": 0, 
-    "cut1_sacDCmask": 81790, 
+    "cut1_sacDCmask": 81534, 
     "cut1_trigmask": 0, 
     "cut2_b14_high": 0.95, 
     "cut2_b14_low": -0.12, 
@@ -22,11 +22,11 @@
     "path_trigmask": 0, 
     "sacpath_DCmask": 0,
     "run_setup": {
-        "SACRIFICE_VARIABLES": ["energy","posr3","udotr"],
-        "CUTS_TODO": ["cut1","cut2","cut2_DataMCComp"],
+        "SACRIFICE_VARIABLES": ["energy","udotr","posr3"],
+        "CUTS_TODO": ["cut2_DataMCComp"],
         "BINNUM_CUT2": 13,
         "BINNUM_CUT1": 11, 
         "PLOT_TITLE_CUT2": "Data/MC comparison of partial fill data, run 200032",
-        "PLOT_TITLE_CUT1": "Fractional sacrifice due to data cleaning\n partial fill data, run 200032"
+        "PLOT_TITLE_CUT1": "Data/MC comparison of sacrifice due to data cleaning\n Nov. 2017 N16 scan (no neckcut)"
     }
 }

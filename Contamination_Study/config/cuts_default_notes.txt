@@ -21,6 +21,11 @@ isCal: if true, only events with the FECD PMT hit in the calibration data
 will be used to estimate the sacrifice with calibration data. 
 (You want this to be true if you're using N16 calibration data)
 
+AVudotrCut: if true, implements the AV cut used to select events from
+the AV ROI.  Specific function should be specified in waterdoc, but is:
+(udotr > (1.0 - 12 *((posr3-%f)**2)))"%(posr3_AVcut)
+
+
 E_high, E_low: Defines the energy range for events considered for sacrifice
 analysis
 nhits_high, nhits_low: Defines the nhit range for events consiered for
@@ -56,6 +61,15 @@ path_trigmask: Any events with a flag from this trigger mask
  will not be considered/used for the sacrifice/contamination studies
 (ND contamination analysis default is esumhi, esumlo, ped, pgt)
 (When doing most DC sacrifice studies, you'll want this to be set to zero)
+
+run_setup: This dictionary controls what variables the sacrifice is analyzed
+across, the number of bins to use, and whether to analyze just the Data sacrifice
+or Data/MC comparison for data cleaning.
+Possible options for CUTS_TODO: "cut1", "cut2", "cut1_DataMCComp", "cut2_DataMCComp"
+SACRIFICE_VARIABLES: Current ones implemented (i.e. variables that have bounds, and
+are present after running the subtupler) are:
+"energy","posr3","udotr","nhits","posz"
+
 
 ###---------CUTS AND TOGGLES FOR SACRIFICE & BIFURCATION PROCESS-----------------###
 
