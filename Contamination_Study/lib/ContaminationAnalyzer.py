@@ -1,7 +1,7 @@
 #This code reads acceptance values and the bifurcation box values output from a
 #Sacrifice analysis and bifurcation analysis, respectively.
 
-
+from cStringIO import StringIO
 import os,sys
 import copy
 import numpy as np
@@ -9,6 +9,9 @@ from numpy import linalg as lg
 import matplotlib.pyplot as plt
 import playDarts as pd
 import scipy as sp
+from scipy.special import gammaln
+from scipy.optimize import fmin
+import iminuit as im
 import json
 import ROOT
 import glob
@@ -16,21 +19,24 @@ import glob
 class ContaminationEstimator(object):
     def __init__(self, Bifurcation_Summary=None, Sacrifice_Summary=None):
         self.ss = Sacrifice_Summary
+        self.acceptances_loaded = False
+        self.minuit_summary = None
 
         print("SACRIFICE SUMMARY: " + str(Sacrifice_Summary))
         if Sacrifice_Summary is not None:
-            self.CalculateSacrifices()
+            self._CalculateSacrifices()
         
         self.a = Bifurcation_Summary['a']
         self.b = Bifurcation_Summary['b']
         self.c = Bifurcation_Summary['c']
         self.d = Bifurcation_Summary['d']
+        self.N = self.a + self.b + self.c + self.d
 
         #Build the dictionary that will save various results from the
         #Contamination Estimator
         self.contamination_summary = {}
-   
-    def CalculateSacrifices(self):
+
+    def _CalculateSacrifices(self):
         x1_vals = []
         x1_statuncs = []
         x1_sysuncs = []
@@ -61,12 +67,102 @@ class ContaminationEstimator(object):
         print("CUT 1 ACC. UNC: " + str(self.x1_unc))
         print("CUT 2 ACCEPTANCE: " + str(self.x2))
         print("CUT 2 ACC. UNC: " + str(self.x2_unc))
-    
+        self.acceptances_loaded = True
+
     def SaveContaminationSummary(self,savedir,savename):
         savesacloc = savedir+"/"+savename
         with open(savesacloc,"w") as f:
             json.dump(self.contamination_summary, f, sort_keys=True,indent=4)
     #Equation 1 of bifur. analysis
+
+class LogLikelihoodContam(ContaminationEstimator):
+    '''Estimates found for y1, y2, and B (and their uncertainties) associated with
+    minimizing the negative log likelhood function calculating the probability the
+    a,b,c, and d box values come from the estimates fitted.'''
+    
+    def lnfact(self,x):
+        '''natural log of the factorial function used in negative
+        log likelihood function fit'''
+        if x == 0:
+            return 1
+        else:
+            return gammaln(x)
+    
+    def nll(self,x,a,b,c,d,x1,x2):
+        '''Negative log likelihood function that, when maximized,
+        finds the y1, y2, and B values to produce the a,b,c, and d
+        box entry counts given acceptances x1 and x2'''
+        y1, y2, B = x
+        N = a + b + c + d
+        S = N - B
+    
+        expected_a = x1*x2*S + y1*y2*B
+        expected_b = (1-x2)*x1*S + (1-y2)*y1*B
+        expected_c = x2*(1-x1)*S + y2*(1-y1)*B
+        expected_d = (1-x1)*(1-x2)*S + (1-y1)*(1-y2)*B
+    
+        return +expected_a - a*np.log(expected_a) + self.lnfact(a) + \
+               +expected_b - b*np.log(expected_b) + self.lnfact(b) + \
+               +expected_c - c*np.log(expected_c) + self.lnfact(c) + \
+               +expected_d - d*np.log(expected_d) + self.lnfact(d)
+
+    def nll_minuit(self,y1,y2,B):
+        '''Negative log likelihood function that, when maximized,
+        finds the y1, y2, and B values to produce the a,b,c, and d
+        box entry counts given acceptances x1 and x2'''
+        N = self.a + self.b + self.c + self.d
+        S = N - B
+    
+        expected_a = self.x1*self.x2*S + y1*y2*B
+        expected_b = (1-self.x2)*self.x1*S + (1-y2)*y1*B
+        expected_c = self.x2*(1-self.x1)*S + y2*(1-y1)*B
+        expected_d = (1-self.x1)*(1-self.x2)*S + (1-y1)*(1-y2)*B
+    
+        return +expected_a - self.a*np.log(expected_a) + self.lnfact(self.a) + \
+               +expected_b - self.b*np.log(expected_b) + self.lnfact(self.b) + \
+               +expected_c - self.c*np.log(expected_c) + self.lnfact(self.c) + \
+               +expected_d - self.d*np.log(expected_d) + self.lnfact(self.d)
+
+    def FitContaminationParameters(self,useMinuit=True):
+        '''Uses scipy optimize to fit the negative log likelihood
+        function defined'''
+        if not self.acceptances_loaded:
+            print("You must first calculate the acceptances associated "+\
+                    "with your expected signal ROI using self.CalculateAcceptances")
+            return
+        if useMinuit:
+            self.contamination_summary["Use_minuit"] = True
+            im.describe(self.nll_minuit)
+            #Save the migrad output to a string
+            sys.stdout = stringbuf = StringIO()
+            m = im.Minuit(self.nll_minuit, limit_y1=(0.0,1.0), limit_y2=(0.0,1.0), limit_B=(0.0,self.N),
+                    y1 = 0.1, y2 = 0.1, B=(self.N/2.0))
+            m.migrad()
+            print("MINIMIZATION OUTPUT: " + str(m.values))
+            print("MINIMUM VALUE: " + str(m.fval))
+            sys.stdout = sys.__stdout__
+            self.contamination_summary['y1_bestfit'] = m.values['y1']
+            self.contamination_summary['y2_bestfit'] = m.values['y2']
+            self.contamination_summary['B_bestfit'] = m.values['B']
+            self.minuit_summary = stringbuf
+        else:
+            self.contamination_summary["Use_minuit"] = False
+            xopt = fmin(self.nll,[self.x1,self.x2,self.N/2.],args=(self.a,self.b,self.c,
+                self.d,self.x1,self.x2))
+            print("fitted y1 = %.2g" % (xopt[0]))
+            print("fitted y2 = %.2g" % (xopt[1]))
+            print("fitted B  = %.2g" % (xopt[2]))
+            self.contamination_summary["y1_bestfit"] = xopt[0]
+            self.contamination_summary["y2_bestfit"] = xopt[1]
+            self.contamination_summary["B_bestfit"] = xopt[2]
+    def SaveMinimizationSummary(self,savedir,savename):
+        if self.minuit_summary is None:
+            print("Looks like you didn't use minuit.  Not saving Minuit summary")
+            return
+        savesacloc = savedir+"/"+savename
+        with open(savesacloc,"w") as f:
+            f.write(str(self.minuit_summary.getvalue()))
+            f.close()
 
 class LowEContamination(ContaminationEstimator):
     '''Contamination estimate that approximates that the number of

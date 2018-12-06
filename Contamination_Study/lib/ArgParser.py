@@ -23,8 +23,11 @@ parser.add_argument('--configfile', dest='CONFIGFILE',action='store',
         type=str,help='Specify the JSON file in ./config/ that has all cut and ROI"+\
                 "selection desired for analysis.  Default is "cuts_default.json"')
 parser.add_argument('--LETA', dest='LETACONTAM',action='store_true',
-        help='Tell contamination study whether or not to use analysis used '+\
+        help='Tell contamination study to calculate values using '+\
                 'in the SNO LETA approach.')
+parser.add_argument('--NLL', dest='NEGLOGLFIT',action='store_true',
+        help='Estimate the contamination parameters using a negative log likelihood"+\
+                "fit that assumes poisson uncertainties.')
 parser.add_argument('--analysisdir', dest='ANALYSISDIR',action='store',
         type=str,help='Specify the directory where the analysis files'+\
                 'are stored.  Will read all files ending with .ntuple.root'+\
@@ -60,5 +63,6 @@ calmc_default = os.path.abspath(os.path.join(THISDIR,"..", "ntuples", "calibrati
 parser.set_defaults(NOSAVE=False,debug=False,CALIBSACANALYSIS=False,
         MCSACANALYSIS=False,BIFURCATE=False,ESTIMATECONTAMINATION=False,
         JOBNAME="0",erange=None,ANALYSISDIR=pd_default,CONFIGFILE='cuts_default.json', 
-        LETACONTAM=False,CALIBDIR=cal_default,CALIBMCDIR=calmc_default,ZRANGE=None,PLOTS=False)
+        LETACONTAM=False,NEGLOGLFIT=False,CALIBDIR=cal_default,CALIBMCDIR=calmc_default,
+        ZRANGE=None,PLOTS=False)
 args = parser.parse_args()

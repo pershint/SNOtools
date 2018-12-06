@@ -13,6 +13,7 @@ CONFIGFILE=args.CONFIGFILE
 SACANALYSIS=args.SACANALYSIS
 BIFURCATE=args.BIFURCATE
 LETACONTAM=args.LETACONTAM
+NEGLOGLFIT=args.NEGLOGLFIT
 ESTIMATECONTAMINATION=args.ESTIMATECONTAMINATION
 SHOWPLOTS=args.SHOWPLOTS
 SAVEPLOTS=args.SAVEPLOTS
@@ -58,7 +59,6 @@ if __name__ == '__main__':
     #Get your run files to load
     #Load the setup JSON defining what plots/variables to use
     #for sacrifice estimate
-    setup_dict = {}
     if SACANALYSIS or BIFURCATE is True:
         if config_exist is True:
             try:
@@ -79,8 +79,8 @@ if __name__ == '__main__':
                 config_dict["E_high"] = float(ERANGE[1])
             if NOSAVE is False:
                 ConfigParser.SaveConfiguration(config_dict,RESULTDIR,"used_cutsconfig.json")
-    setup_dict = config_dict["run_setup"]
     if SACANALYSIS is True:
+        setup_dict = config_dict["run_setup"]
         sac_data = glob.glob("%s/*.root"%(SACRIFICEDIR))
         sac_mc = glob.glob("%s/*.root"%(SACRIFICEMCDIR))
         print("NUMBER OF N16 FILES: " + str(len(sac_data)))
@@ -197,11 +197,21 @@ if __name__ == '__main__':
             if DEBUG is True:
                 print("Estimated contamination: %f"%(contam))
                 print("Estimate's uncertainty: %f"%(contam_unc))
-            CE.SaveContaminationSummary(RESULTDIR,"contamination_summary_LETA.json")
+            if NOSAVE is False:
+                CE.SaveContaminationSummary(RESULTDIR,"contamination_summary_LETA.json")
+        if NEGLOGLFIT is True:
+            print("FITTING CONTAMINATION PARAMETERS ASSUMING POISSON FLUCTUATIONS")
+            CE = ca.LogLikelihoodContam(bifurcation_summary,cut_sac_summary)
+            CE.FitContaminationParameters()
+            if NOSAVE is False:
+                CE.SaveContaminationSummary(RESULTDIR,"contamination_fit_NLL.json")
+                CE.SaveMinimizationSummary(RESULTDIR,"contamination_fit_MinuitSummary.txt")
         else:
             CE = ca.NDContamination(bifurcation_summary,cut_sac_summary)
             CE.CalculateContaminationValues() #Calculate contamination eqns.
             values = CE.BootstrapCL(0.683,100000) #Estimate upper end of y1y2
+            if NOSAVE is False:
+                CE.SaveContaminationSummary(RESULTDIR,"contamination_summary.json")
             if SHOWPLOTS is True:
                 values=values
                 plt.hist(values,100,range=(min(values),max(values)))
@@ -210,5 +220,3 @@ if __name__ == '__main__':
                 plt.title("Distribution of estimated contamination after\n"+\
                     "re-firing variables with statistical uncertainties")
                 plt.show()
-        if NOSAVE is False:
-            CE.SaveContaminationSummary(RESULTDIR,"contamination_summary.json")
