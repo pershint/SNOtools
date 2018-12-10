@@ -27,9 +27,13 @@ class ContaminationEstimator(object):
             self._CalculateSacrifices()
         
         self.a = Bifurcation_Summary['a']
+        self.a_unc = np.sqrt(self.a)
         self.b = Bifurcation_Summary['b']
+        self.b_unc = np.sqrt(self.b)
         self.c = Bifurcation_Summary['c']
+        self.c_unc = np.sqrt(self.c)
         self.d = Bifurcation_Summary['d']
+        self.d_unc = np.sqrt(self.d)
         self.N = self.a + self.b + self.c + self.d
 
         #Build the dictionary that will save various results from the
@@ -138,6 +142,7 @@ class LogLikelihoodContam(ContaminationEstimator):
             m = im.Minuit(self.nll_minuit, limit_y1=(0.0,1.0), limit_y2=(0.0,1.0), limit_B=(0.0,self.N),
                     y1 = 0.1, y2 = 0.1, B=(self.N/2.0))
             m.migrad()
+            m.minos()
             print("MINIMIZATION OUTPUT: " + str(m.values))
             print("MINIMUM VALUE: " + str(m.fval))
             sys.stdout = sys.__stdout__
@@ -170,25 +175,45 @@ class LowEContamination(ContaminationEstimator):
     def __init__(self, Bifurcation_Summary=None, Sacrifice_Summary=None):
         super(LowEContamination,self).__init__(Bifurcation_Summary=Bifurcation_Summary,
                 Sacrifice_Summary=Sacrifice_Summary)
+        self.setting_upperlimit = False
+        if self.a == 0:
+            self.a = 1.15
+            self.a_unc = 0
+            self.setting_upperlimit = True
+        if self.b == 0:
+            self.b = 1.15
+            self.b_unc = 0
+            self.setting_upperlimit = True
+        if self.c == 0:
+            self.c = 1.15
+            self.c_unc = 0
+            self.setting_upperlimit = True
+        if self.d == 0:
+            self.d = 1.15
+            self.d_unc = 0
+            self.setting_upperlimit = True
+        self.N = self.a + self.b + self.c + self.d
         self.signal_estimate = self.a/(self.x1*self.x2)
+        
         self.signal_estimate_unc = self.signal_estimate*np.sqrt((self.x1_unc/self.x1)**2 +\
-                (self.x2_unc/self.x2)**2 + (1/self.a))
+                (self.x2_unc/self.x2)**2 + (self.a_unc/self.a)**2)
         self.contamination_summary['type'] = 'LowE'
 
     def _N1(self):
         return (self.b - (self.x1*(1.0-self.x2)*self.signal_estimate))
     def _N1_unc(self):
+
         t2_unc = abs(self.x1*(1.0-self.x2)*self.signal_estimate)*np.sqrt(\
                 (self.x1_unc/self.x1)**2 + (self.x2_unc/(1-self.x2))**2 + \
                 (self.signal_estimate_unc/self.signal_estimate)**2)
-        n1u = np.sqrt(self.b + (t2_unc)**2)
+        n1u = np.sqrt((self.b_unc)**2 + (t2_unc)**2)
         return n1u
 
     def _N2_unc(self):
         t2_unc = abs((self.x2*(1.0-self.x1)*self.signal_estimate))*np.sqrt(\
                 (self.x1_unc/(1-self.x1))**2 + (self.x2_unc/(self.x2))**2 + \
                 (self.signal_estimate_unc/self.signal_estimate)**2)
-        n2u = np.sqrt((np.sqrt(self.c))**2 + (t2_unc)**2)
+        n2u = np.sqrt((self.c_unc)**2 + (t2_unc)**2)
         return n2u
 
     def _N2(self):
@@ -201,7 +226,7 @@ class LowEContamination(ContaminationEstimator):
         t3_unc = (((1.0-self.x2)*(1.0-self.x1)*self.signal_estimate))*np.sqrt(\
                 (self.x1_unc/(1-self.x1))**2 + (self.x2_unc/(1-self.x2))**2 + \
                 (self.signal_estimate_unc/self.signal_estimate)**2)
-        Du = np.sqrt((np.sqrt(self.d))**2 + (t3_unc)**2)
+        Du = np.sqrt((self.d_unc)**2 + (t3_unc)**2)
         return Du
 
     def _y1y2B(self):
@@ -214,6 +239,7 @@ class LowEContamination(ContaminationEstimator):
         print("DENOM: " + str(self._D()))
         y1y2B = self._N1() * self._N2() / self._D() 
         self.contamination_summary['y1y2B'] = y1y2B
+        self.contamination_summary['setting_68CLbound'] = self.setting_upperlimit
         return y1y2B
 
     def CalculateContaminationUnc(self):
